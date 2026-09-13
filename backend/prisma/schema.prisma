@@ -1,0 +1,608 @@
+// backend/prisma/schema.prisma
+// Sikkim Traveller — Production Data Model
+// All models use UUID primary keys. Internal IDs are never returned to customers.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ENUMS — Mirror src/services/operations/operationsContextService.js
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum BookingStatus {
+  RECEIVED
+  UNDER_REVIEW
+  AVAILABILITY_CHECK
+  PRICE_PENDING
+  PROPOSAL_SENT
+  AWAITING_CUSTOMER
+  CUSTOMER_ACCEPTED
+  READY_TO_CONFIRM
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  DECLINED
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum StaffRole {
+  ADMIN
+  OPERATIONS_MANAGER
+  TRAVEL_OPERATOR
+  SALES
+  VIEWER
+}
+
+enum PermitStatus {
+  NOT_REQUIRED
+  REQUIRED
+  DOCUMENTS_PENDING
+  APPLICATION_PENDING
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum QuoteStatus {
+  DRAFT
+  INTERNAL_REVIEW
+  SENT_TO_CUSTOMER
+  CUSTOMER_ACCEPTED
+  CUSTOMER_DECLINED
+  EXPIRED
+}
+
+enum ChangeRequestStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  DECLINED
+}
+
+enum ChangeRequestCategory {
+  DATES
+  DESTINATIONS
+  ACCOMMODATION
+  TRANSPORTATION
+  BUDGET_REDUCE
+  BUDGET_INCREASE
+  PACE
+  ACTIVITY
+  GENERAL
+  CANCELLATION
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentMilestone {
+  ADVANCE_DEPOSIT
+  MIDPOINT_PAYMENT
+  FINAL_PAYMENT
+  SUPPLEMENTARY
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  WHATSAPP
+  SMS
+}
+
+enum NotificationStatus {
+  QUEUED
+  DELIVERED
+  READ
+  FAILED
+  SUPPRESSED
+}
+
+enum DocumentStatus {
+  DRAFT
+  READY
+  SUPERSEDED
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CUSTOMER JOURNEY — Core record
+// ─────────────────────────────────────────────────────────────────────────────
+
+model CustomerJourney {
+  id             String        @id @default(uuid())
+  requestId      String        @unique  // ST-REQ-YYYYMMDD-XXXX (human-readable, not secret)
+  status         BookingStatus @default(RECEIVED)
+  priority       Priority      @default(NORMAL)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  idempotencyKey String?       @unique  // From Idempotency-Key header
+
+  // Related models
+  traveler           Traveler?
+  trip               Trip?
+  itinerary          Itinerary?
+  permits            Permit[]
+  changeRequests     ChangeRequest[]
+  proposals          Proposal[]
+  activeProposalId   String?
+  payments           Payment[]
+  invoices           Invoice[]
+  notifications      Notification[]
+  notificationPref   NotificationPreference?
+  documents          Document[]
+  auditLogs          AuditLog[]
+  accessTokens       JourneyAccessToken[]
+  sessions           CustomerSession[]
+  quotes             Quote[]
+
+  // Operations metadata (NEVER returned to customers)
+  internalNotes      String?
+  supplierMargin     Float?
+  assignedStaffId    String?
+  assignedStaff      OperationsUser?  @relation(fields: [assignedStaffId], references: [id])
+
+  @@index([requestId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECURE ACCESS TOKEN
+// ─────────────────────────────────────────────────────────────────────────────
+
+model JourneyAccessToken {
+  id             String          @id @default(uuid())
+  tokenHash      String          @unique  // SHA-256 of raw token — raw token never stored
+  journeyId      String
+  journey        CustomerJourney @relation(fields: [journeyId], references: [id])
+  createdAt      DateTime        @default(now())
+  expiresAt      DateTime
+  revokedAt      DateTime?
+  revokedReason  String?
+  lastUsedAt     DateTime?
+  sessions       CustomerSession[]
+
+  @@index([tokenHash])
+  @@index([journeyId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CUSTOMER SESSION
+// ─────────────────────────────────────────────────────────────────────────────
+
+model CustomerSession {
+  id          String             @id @default(uuid())
+  journeyId   String
+  journey     CustomerJourney    @relation(fields: [journeyId], references: [id])
+  tokenId     String
+  token       JourneyAccessToken @relation(fields: [tokenId], references: [id])
+  createdAt   DateTime           @default(now())
+  expiresAt   DateTime
+  revokedAt   DateTime?
+  ipAddress   String?
+  userAgent   String?
+
+  @@index([journeyId])
+  @@index([id])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TRAVELER
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Traveler {
+  id              String          @id @default(uuid())
+  journeyId       String          @unique
+  journey         CustomerJourney @relation(fields: [journeyId], references: [id])
+  fullName        String
+  firstName       String
+  email           String?         // Optional — not required for passwordless
+  phone           String?
+  city            String?
+  country         String          @default("India")
+  contactMethod   String          @default("WHATSAPP")
+  contactTime     String          @default("ANYTIME")
+  adultCount      Int             @default(1)
+  childCount      Int             @default(0)
+  seniorCount     Int             @default(0)
+  createdAt       DateTime        @default(now())
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TRIP
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Trip {
+  id           String          @id @default(uuid())
+  journeyId    String          @unique
+  journey      CustomerJourney @relation(fields: [journeyId], references: [id])
+  startDate    DateTime?
+  endDate      DateTime?
+  duration     Int             @default(5)  // nights
+  dateMode     String          @default("fixed")  // fixed | flexible
+  travelStyle  String          @default("balanced")
+  budgetTier   String          @default("comfortable")
+  destinations Destination[]
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DESTINATION
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Destination {
+  id        String @id @default(uuid())
+  tripId    String
+  trip      Trip   @relation(fields: [tripId], references: [id])
+  slug      String // gangtok, lachung, etc.
+  name      String
+  region    String?
+  order     Int    @default(0)
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ITINERARY
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Itinerary {
+  id        String          @id @default(uuid())
+  journeyId String          @unique
+  journey   CustomerJourney @relation(fields: [journeyId], references: [id])
+  version   String          @default("ST-v1")
+  title     String
+  summary   String?
+  days      ItineraryDay[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+model ItineraryDay {
+  id            String    @id @default(uuid())
+  itineraryId   String
+  itinerary     Itinerary @relation(fields: [itineraryId], references: [id])
+  dayNumber     Int
+  title         String
+  baseLocation  String
+  elevation     String?
+  accommodation String?
+  transport     String?
+  highlights    String[]
+  activities    Json      // [{time, description}]
+  createdAt     DateTime  @default(now())
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ACCOMMODATION & TRANSPORTATION
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Accommodation {
+  id              String @id @default(uuid())
+  journeyId       String @unique
+  status          String @default("PROVISIONAL")
+  preference      String @default("comfortable")
+  selectedOption  String?
+  confirmedAt     DateTime?
+}
+
+model Transportation {
+  id          String @id @default(uuid())
+  journeyId   String @unique
+  status      String @default("PROVISIONAL")
+  mode        String @default("private-cab")
+  summary     String?
+  driverName  String? // Only shown after CONFIRMED — never in safe model
+  driverPhone String? // Only shown after CONFIRMED — never in safe model
+  vehicleType String?
+  confirmedAt DateTime?
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PERMIT
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Permit {
+  id            String          @id @default(uuid())
+  journeyId     String
+  journey       CustomerJourney @relation(fields: [journeyId], references: [id])
+  permitType    String          // PAP, ILP, etc.
+  destination   String
+  status        PermitStatus    @default(NOT_REQUIRED)
+  submittedAt   DateTime?
+  approvedAt    DateTime?
+  documents     Document[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CHANGE REQUEST
+// ─────────────────────────────────────────────────────────────────────────────
+
+model ChangeRequest {
+  id             String               @id @default(uuid())
+  journeyId      String
+  journey        CustomerJourney      @relation(fields: [journeyId], references: [id])
+  category       ChangeRequestCategory @default(GENERAL)
+  title          String
+  description    String
+  requestedDetails Json?
+  status         ChangeRequestStatus  @default(SUBMITTED)
+  reviewedBy     String?
+  reviewedAt     DateTime?
+  reviewNotes    String?              // Internal — never returned to customer
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@index([journeyId])
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PROPOSAL & APPROVAL
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Proposal {
+  id          String          @id @default(uuid())
+  journeyId   String
+  journey     CustomerJourney @relation(fields: [journeyId], references: [id])
+  quoteId     String?
+  quote       Quote?          @relation(fields: [quoteId], references: [id])
+  version     Int
+  versionLabel String          // "Proposal v1", "Proposal v2"
+  status      QuoteStatus      @default(DRAFT)
+  summary     String?
+  inclusions  String[]
+  exclusions  String[]
+  validUntil  DateTime
+  sentAt      DateTime?
+  createdBy   String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  approval    ProposalApproval?
+
+  @@index([journeyId])
+  @@index([version])
+}
+
+model ProposalApproval {
+  id              String   @id @default(uuid())
+  proposalId      String   @unique
+  proposal        Proposal @relation(fields: [proposalId], references: [id])
+  proposalVersion Int
+  customerName    String
+  acceptedAt      DateTime
+  invalidatedAt   DateTime?
+  invalidationReason String?
+  agreements      Json     // {reviewedDetails, reviewedPrice, understoodAvailability, agreedToProceed}
+  sessionId       String?  // Customer session that submitted the approval
+  createdAt       DateTime @default(now())
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// QUOTE
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Quote {
+  id               String          @id @default(uuid())
+  journeyId        String
+  journey          CustomerJourney @relation(fields: [journeyId], references: [id])
+  status           QuoteStatus     @default(DRAFT)
+  baseCost         Float
+  accommodationCost Float
+  transportCost    Float
+  permitCost       Float
+  serviceFee       Float
+  taxes            Float
+  markup           Float           // Internal — never shown to customer
+  finalPrice       Float
+  currency         String          @default("INR")
+  validUntil       DateTime
+  createdBy        String
+  createdByRole    StaffRole
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  proposals        Proposal[]
+
+  @@index([journeyId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PAYMENT
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Payment {
+  id                   String           @id @default(uuid())
+  journeyId            String
+  journey              CustomerJourney  @relation(fields: [journeyId], references: [id])
+  milestone            PaymentMilestone
+  amount               Float
+  currency             String           @default("INR")
+  status               PaymentStatus    @default(PENDING)
+  razorpayOrderId      String?          @unique
+  razorpayPaymentId    String?
+  razorpaySignature    String?
+  webhookVerified      Boolean          @default(false)
+  failureReason        String?
+  paidAt               DateTime?
+  refundedAt           DateTime?
+  refundAmount         Float?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  invoice              Invoice?
+
+  @@index([journeyId])
+  @@index([razorpayOrderId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INVOICE
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Invoice {
+  id          String          @id @default(uuid())
+  journeyId   String
+  journey     CustomerJourney @relation(fields: [journeyId], references: [id])
+  paymentId   String?         @unique
+  payment     Payment?        @relation(fields: [paymentId], references: [id])
+  invoiceNo   String          @unique
+  lineItems   Json
+  subtotal    Float
+  gst         Float
+  total       Float
+  currency    String          @default("INR")
+  issuedAt    DateTime        @default(now())
+
+  @@index([journeyId])
+  @@index([invoiceNo])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DOCUMENT
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Document {
+  id          String          @id @default(uuid())
+  journeyId   String
+  journey     CustomerJourney @relation(fields: [journeyId], references: [id])
+  permitId    String?
+  permit      Permit?         @relation(fields: [permitId], references: [id])
+  name        String
+  type        String          // CONFIRMATION_VOUCHER, PERMIT_PASS, FINAL_RECEIPT, etc.
+  status      DocumentStatus  @default(DRAFT)
+  storagePath String          // Supabase Storage path — never exposed directly
+  version     String          @default("v1")
+  issuedAt    DateTime?
+  createdAt   DateTime        @default(now())
+
+  @@index([journeyId])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NOTIFICATION
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Notification {
+  id               String              @id @default(uuid())
+  journeyId        String
+  journey          CustomerJourney     @relation(fields: [journeyId], references: [id])
+  eventType        String
+  channel          NotificationChannel @default(IN_APP)
+  status           NotificationStatus  @default(QUEUED)
+  subject          String?
+  body             String
+  idempotencyKey   String              @unique
+  isAIDraft        Boolean             @default(false)
+  deliveredAt      DateTime?
+  readAt           DateTime?
+  failureReason    String?
+  retryCount       Int                 @default(0)
+  createdAt        DateTime            @default(now())
+
+  @@index([journeyId])
+  @@index([idempotencyKey])
+  @@index([status])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NOTIFICATION PREFERENCE
+// ─────────────────────────────────────────────────────────────────────────────
+
+model NotificationPreference {
+  id              String          @id @default(uuid())
+  journeyId       String          @unique
+  journey         CustomerJourney @relation(fields: [journeyId], references: [id])
+  inAppEnabled    Boolean         @default(true)
+  emailEnabled    Boolean         @default(true)
+  whatsappEnabled Boolean         @default(true)
+  smsEnabled      Boolean         @default(false)
+  muteAll         Boolean         @default(false)
+  updatedAt       DateTime        @updatedAt
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// AUDIT LOG
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id              String          @id @default(uuid())
+  journeyId       String
+  journey         CustomerJourney @relation(fields: [journeyId], references: [id])
+  actorId         String?
+  actorRole       StaffRole?
+  action          String
+  previousValue   String?
+  newValue        String?
+  message         String?
+  ipAddress       String?
+  createdAt       DateTime        @default(now())
+
+  @@index([journeyId])
+  @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// OPERATIONS USER
+// ─────────────────────────────────────────────────────────────────────────────
+
+model OperationsUser {
+  id          String          @id @default(uuid())
+  name        String
+  email       String          @unique
+  role        StaffRole       @default(VIEWER)
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+  journeys    CustomerJourney[]
+
+  @@index([email])
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WEATHER & ADVISORY SNAPSHOTS (cache)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model WeatherSnapshot {
+  id              String    @id @default(uuid())
+  destinationSlug String
+  temp            String
+  condition       String
+  precipProb      Float
+  windSpeed       Float?
+  fetchedAt       DateTime  @default(now())
+  source          String    @default("open-meteo")
+
+  @@index([destinationSlug])
+  @@index([fetchedAt])
+}
+
+model TravelAdvisory {
+  id           String   @id @default(uuid())
+  region       String
+  title        String
+  description  String
+  riskLevel    String   @default("LOW")
+  issuedAt     DateTime @default(now())
+  expiresAt    DateTime?
+  source       String   @default("internal")
+
+  @@index([region])
+}

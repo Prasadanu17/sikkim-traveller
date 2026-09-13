@@ -1,0 +1,58 @@
+export const packages = [
+  {
+    id: "kanchenjunga-classic",
+    name: "Kanchenjunga Classic",
+    category: "Adventure",
+    duration: "6 nights / 7 days",
+    price: "From ₹34,500 / person",
+    cover: "https://picsum.photos/seed/pkg-kanchenjunga/900/650",
+    highlights: ["Gangtok", "Pelling", "Yumthang Valley", "Guided trek day"],
+  },
+  {
+    id: "silk-route-explorer",
+    name: "Old Silk Route Explorer",
+    category: "Adventure",
+    duration: "4 nights / 5 days",
+    price: "From ₹22,900 / person",
+    cover: "https://picsum.photos/seed/pkg-silkroute/900/650",
+    highlights: ["Zuluk", "Nathula Pass", "Tsomgo Lake", "Border viewpoint"],
+  },
+  {
+    id: "honeymoon-in-the-clouds",
+    name: "Honeymoon in the Clouds",
+    category: "Honeymoon",
+    duration: "5 nights / 6 days",
+    price: "From ₹41,000 / couple",
+    cover: "https://picsum.photos/seed/pkg-honeymoon/900/650",
+    highlights: ["Private mountain-view stay", "Candlelight dinner", "Pelling sunrise point"],
+  },
+  {
+    id: "family-sikkim",
+    name: "Easy Sikkim, Family Edition",
+    category: "Family",
+    duration: "5 nights / 6 days",
+    price: "From ₹28,700 / person",
+    cover: "https://picsum.photos/seed/pkg-family/900/650",
+    highlights: ["Low-altitude only", "Family rooms", "Ropeway + local sightseeing"],
+  },
+  {
+    id: "monastery-trail",
+    name: "The Monastery Trail",
+    category: "Pilgrimage",
+    duration: "3 nights / 4 days",
+    price: "From ₹17,300 / person",
+    cover: "https://picsum.photos/seed/pkg-monastery/900/650",
+    highlights: ["Rumtek", "Pemayangtse", "Tashiding", "Local monk-led walk"],
+  },
+  {
+    id: "dzongri-trek",
+    name: "Dzongri High-Altitude Trek",
+    category: "Trekking",
+    duration: "7 nights / 8 days",
+    price: "From ₹39,900 / person",
+    cover: "https://picsum.photos/seed/pkg-dzongri/900/650",
+    highlights: ["Guided trek", "Camp stays", "Acclimatization built in"],
+  },
+];
+
+export const packageCategories = ["All", "Adventure", "Honeymoon", "Family", "Pilgrimage", "Trekking"];
