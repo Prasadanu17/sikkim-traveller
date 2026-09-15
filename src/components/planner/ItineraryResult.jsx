@@ -43,6 +43,7 @@ export default function ItineraryResult({
   const [isRegenModalOpen, setIsRegenModalOpen] = useState(false);
   const [editingDay, setEditingDay] = useState(null);
   const [diffViewData, setDiffViewData] = useState(null);
+  const [forceExpandAll, setForceExpandAll] = useState(false);
 
   const { current: itinerary, history, isStale, source, explanation, tradeoffNotice } = itineraryState;
 
@@ -59,7 +60,11 @@ export default function ItineraryResult({
   };
 
   const handlePrint = () => {
-    window.print();
+    setForceExpandAll(true);
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => setForceExpandAll(false), 500);
+    }, 150);
   };
 
   const handleTradeoffAlternative = (alt) => {
@@ -225,6 +230,7 @@ export default function ItineraryResult({
                   key={day.dayNumber}
                   day={day}
                   isDefaultExpanded={day.dayNumber <= 2}
+                  forceExpand={forceExpandAll}
                   onEditDay={(d) => setEditingDay(d)}
                   dayRealtimeAlerts={dayAlerts}
                 />

@@ -55,7 +55,7 @@ export function sanitizeBookingForm(form) {
 /**
  * Validates form fields and returns an object containing validation status and error messages.
  */
-export function validateBookingForm(form) {
+export function validateBookingForm(form, targetStep = null) {
   const errors = {};
 
   if (!form) {
@@ -67,35 +67,36 @@ export function validateBookingForm(form) {
   const phone = (form.primaryTraveler?.phone || "").trim();
   const contactMethod = form.contactPreference?.method;
 
-  // Name check
-  if (!name) {
-    errors.fullName = "Please enter your name.";
-  }
+  // Step 2 validations (Traveler details)
+  if (targetStep === 2 || targetStep === null) {
+    if (!name) {
+      errors.fullName = "Please enter your full name.";
+    }
 
-  // Email check
-  if (!email) {
-    errors.email = "Please enter your email address.";
-  } else {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      errors.email = "Please enter a valid email address.";
+    if (!email) {
+      errors.email = "Please enter your email address.";
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        errors.email = "Please enter a valid email address.";
+      }
+    }
+
+    if (!phone) {
+      errors.phone = "Please enter your phone number.";
+    } else {
+      const phoneClean = phone.replace(/[\s\-()+]/g, "");
+      if (!/^\d{7,15}$/.test(phoneClean)) {
+        errors.phone = "Please enter a valid phone number (at least 7 digits).";
+      }
     }
   }
 
-  // Phone check
-  if (!phone) {
-    errors.phone = "Please enter your phone number.";
-  } else {
-    // Basic phone validation (allowing digits, spaces, plus, dashes, parentheses)
-    const phoneClean = phone.replace(/[\s\-()+]/g, "");
-    if (!/^\d{7,15}$/.test(phoneClean)) {
-      errors.phone = "Please enter a valid phone number.";
+  // Step 4 validations (Contact preference)
+  if (targetStep === 4 || targetStep === null) {
+    if (!contactMethod) {
+      errors.contactMethod = "Please select a contact preference.";
     }
-  }
-
-  // Contact preference check
-  if (!contactMethod) {
-    errors.contactMethod = "Please select a contact preference.";
   }
 
   return {

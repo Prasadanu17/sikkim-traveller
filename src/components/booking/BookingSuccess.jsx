@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Calendar, Users, MapPin, DollarSign, Home, MessageSquare, Eye } from "lucide-react";
+import { Calendar, Users, MapPin, DollarSign, Home, MessageSquare, Eye, Printer } from "lucide-react";
 import { destinations as allDests } from "../../data/destinations";
 
 export default function BookingSuccess({ bookingContext, submissionResult, onViewTrip, onTalkCopilot, onBackHome }) {
@@ -114,27 +114,35 @@ export default function BookingSuccess({ bookingContext, submissionResult, onVie
       </div>
 
       {/* Navigation CTA Buttons */}
-      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 max-w-sm mx-auto pt-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-w-md mx-auto pt-4">
+        {/* Print / Save PDF */}
+        <button
+          onClick={() => window.print()}
+          className="inline-flex items-center justify-center gap-1.5 rounded-full border border-neutral-300 bg-white hover:border-gold px-4 py-3 text-xs font-semibold text-ink transition cursor-pointer shadow-sm"
+        >
+          <Printer size={14} className="text-gold-dark" /> Print / Save PDF
+        </button>
+
         {/* View Trip */}
         <button
           onClick={onViewTrip}
-          className="w-full inline-flex items-center justify-center gap-1.5 rounded-full border border-neutral-300 bg-white hover:border-gold px-5 py-3 text-xs font-semibold text-ink transition"
+          className="inline-flex items-center justify-center gap-1.5 rounded-full border border-neutral-300 bg-white hover:border-gold px-4 py-3 text-xs font-semibold text-ink transition cursor-pointer shadow-sm"
         >
-          <Eye size={14} /> View My Trip
+          <Eye size={14} /> Track Status
         </button>
 
         {/* Talk to Copilot */}
         <button
           onClick={onTalkCopilot}
-          className="w-full inline-flex items-center justify-center gap-1.5 rounded-full border border-neutral-300 bg-white hover:border-gold px-5 py-3 text-xs font-semibold text-ink transition"
+          className="inline-flex items-center justify-center gap-1.5 rounded-full border border-neutral-300 bg-white hover:border-gold px-4 py-3 text-xs font-semibold text-ink transition cursor-pointer shadow-sm"
         >
-          <MessageSquare size={14} className="text-gold-dark" /> Talk to Trip Copilot
+          <MessageSquare size={14} className="text-gold-dark" /> Ask AI Copilot
         </button>
 
         {/* Back to Home */}
         <button
           onClick={onBackHome}
-          className="w-full inline-flex items-center justify-center gap-1.5 rounded-full bg-pine hover:bg-gold text-parchment hover:text-pine px-5 py-3 text-xs font-semibold transition"
+          className="inline-flex items-center justify-center gap-1.5 rounded-full bg-pine hover:bg-gold text-parchment hover:text-pine px-4 py-3 text-xs font-semibold transition cursor-pointer shadow-sm"
         >
           <Home size={14} /> Back to Home
         </button>

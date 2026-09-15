@@ -252,7 +252,7 @@ for (const modelName of Object.keys(store)) {
 }
 
 // Resolve implementation
-const isTestMode = env.NODE_ENV === 'test' || env.DATABASE_URL.includes('your-') || env.DATABASE_URL.includes('placeholder') || env.DATABASE_URL.includes('test:test');
+const isTestMode = env.NODE_ENV === 'test' || env.DATABASE_URL.toLowerCase().includes('your-') || env.DATABASE_URL.toLowerCase().includes('placeholder') || env.DATABASE_URL.includes('test:test');
 
 let activeClient;
 

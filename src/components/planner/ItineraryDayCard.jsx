@@ -2,8 +2,9 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sun, Sunset, Moon, Car, Bed, AlertTriangle, Info, ChevronDown, ChevronUp, Clock, Edit3, ShieldAlert } from "lucide-react";
 
-export default function ItineraryDayCard({ day, isDefaultExpanded = true, onEditDay, dayRealtimeAlerts = [] }) {
-  const [isExpanded, setIsExpanded] = useState(isDefaultExpanded);
+export default function ItineraryDayCard({ day, isDefaultExpanded = true, forceExpand = false, onEditDay, dayRealtimeAlerts = [] }) {
+  const [internalExpanded, setInternalExpanded] = useState(isDefaultExpanded);
+  const isExpanded = forceExpand || internalExpanded;
 
   const formatPrice = (val) => {
     return new Intl.NumberFormat("en-IN", {
@@ -22,7 +23,7 @@ export default function ItineraryDayCard({ day, isDefaultExpanded = true, onEdit
 
       {/* CARD HEADER */}
       <div className="p-5 sm:p-6 bg-white select-none flex items-center justify-between gap-4 border-b border-neutral-100">
-        <div className="flex items-center gap-4 cursor-pointer" onClick={() => setIsExpanded(!isExpanded)}>
+        <div className="flex items-center gap-4 cursor-pointer" onClick={() => setInternalExpanded(!isExpanded)}>
           <div className="w-12 h-12 rounded-xl bg-pine text-gold flex flex-col items-center justify-center font-display shrink-0 shadow-sm">
             <span className="text-[9px] uppercase font-bold tracking-widest text-gold/70 leading-none">DAY</span>
             <span className="text-xl font-bold leading-none mt-0.5">{day.dayNumber}</span>
@@ -75,7 +76,7 @@ export default function ItineraryDayCard({ day, isDefaultExpanded = true, onEdit
           )}
 
           <button
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={() => setInternalExpanded(!isExpanded)}
             className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-500 hover:bg-neutral-200 transition"
             aria-label="Toggle day details"
           >

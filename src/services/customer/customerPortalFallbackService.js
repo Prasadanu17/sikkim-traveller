@@ -782,10 +782,79 @@ export function getMockBookingByToken(token) {
   if (!token) return null;
   const list = getMockBookings();
   const clean = token.trim().toUpperCase();
-  return list.find(b =>
+
+  let found = list.find(b =>
     b.trackingToken?.toUpperCase() === clean ||
-    b.publicRequestId?.toUpperCase() === clean
-  ) || null;
+    b.publicRequestId?.toUpperCase() === clean ||
+    b.requestId?.toUpperCase() === clean ||
+    b.accessToken?.toUpperCase() === clean
+  );
+
+  if (found) return found;
+
+  // Search Operations mock bookings store (st_ops_mock_bookings_v1)
+  try {
+    const rawOps = localStorage.getItem("st_ops_mock_bookings_v1");
+    if (rawOps) {
+      const opsList = JSON.parse(rawOps);
+      if (Array.isArray(opsList)) {
+        const opsFound = opsList.find(b =>
+          b.requestId?.toUpperCase() === clean ||
+          b.publicRequestId?.toUpperCase() === clean ||
+          b.trackingToken?.toUpperCase() === clean ||
+          b.accessToken?.toUpperCase() === clean ||
+          b.id?.toUpperCase() === clean
+        );
+
+        if (opsFound) {
+          return {
+            _isMockData: true,
+            trackingToken: opsFound.trackingToken || opsFound.accessToken || opsFound.requestId,
+            publicRequestId: opsFound.publicRequestId || opsFound.requestId,
+            status: opsFound.status || "RECEIVED",
+            priority: opsFound.priority || "NORMAL",
+            customer: opsFound.customer || {
+              firstName: (opsFound.traveler?.fullName || opsFound.traveler?.name || "Traveler").split(" ")[0],
+              fullName: opsFound.traveler?.fullName || opsFound.traveler?.name || "Traveler",
+              travelerCount: opsFound.traveler?.total || 2,
+              email: opsFound.traveler?.email || "",
+              phone: opsFound.traveler?.phone || ""
+            },
+            trip: opsFound.trip || {
+              startDate: opsFound.trip?.startDate || new Date().toISOString().split("T")[0],
+              endDate: opsFound.trip?.endDate || null,
+              duration: opsFound.trip?.duration || 5,
+              destinations: opsFound.destinations || ["Gangtok"],
+              travelStyle: "Balanced"
+            },
+            itinerary: opsFound.itinerary || {
+              version: 1,
+              title: "Sikkim Journey",
+              days: []
+            },
+            budget: opsFound.budget || {
+              estimated: opsFound.budget?.estimatedRange?.min || 25000,
+              currentProposal: null,
+              currency: "INR"
+            },
+            accommodation: opsFound.accommodation || { status: "PROVISIONAL", selectedOption: "Standard Stays" },
+            transportation: opsFound.transportation || { status: "PROVISIONAL", summary: "Private Cab" },
+            permits: opsFound.permits || { status: "PROCESSING", customerRelevantIssues: [] },
+            proposal: opsFound.proposal || null,
+            customerApproval: opsFound.customerApproval || { accepted: false },
+            documents: opsFound.documents || [],
+            customerMessages: opsFound.customerMessages || [],
+            nextAction: opsFound.nextAction || "Your booking request is under review by Sikkim Traveller operations desk.",
+            updatedAt: opsFound.updatedAt || new Date().toISOString()
+          };
+        }
+      }
+    }
+  } catch (_err) {
+    // Ignore JSON parse errors
+  }
+
+  return null;
 }
 
 /**

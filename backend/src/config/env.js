@@ -33,6 +33,12 @@ const envSchema = z.object({
 
 let env;
 
+if (typeof process.loadEnvFile === 'function') {
+  try {
+    process.loadEnvFile();
+  } catch (_) {}
+}
+
 try {
   // If in test mode, merge defaults first so missing env vars don't throw ZodError
   if (process.env.NODE_ENV === 'test') {

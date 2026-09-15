@@ -88,12 +88,9 @@ export default function BookingJourney({ plannerState, onClose, onToggleCopilot,
   };
 
   const handleNextStep = () => {
-    // Step 2 validation
+    // Step 2 validation (Traveler Details)
     if (currentStep === 2) {
-      const { isValid, errors } = validateBookingForm({
-        ...formData,
-        primaryTraveler: formData.primaryTraveler
-      });
+      const { isValid, errors } = validateBookingForm(formData, 2);
       if (!isValid) {
         setValidationErrors(errors);
         return;
@@ -101,10 +98,11 @@ export default function BookingJourney({ plannerState, onClose, onToggleCopilot,
       setValidationErrors({});
     }
 
-    // Step 4 validation
+    // Step 4 validation (Contact Preference)
     if (currentStep === 4) {
-      if (!formData.contactPreference?.method) {
-        setValidationErrors({ contactMethod: "Please select your preferred contact channel." });
+      const { isValid, errors } = validateBookingForm(formData, 4);
+      if (!isValid) {
+        setValidationErrors(errors);
         return;
       }
       setValidationErrors({});
@@ -174,10 +172,10 @@ export default function BookingJourney({ plannerState, onClose, onToggleCopilot,
         });
         clearBookingDraft();
 
+        setCurrentStep(6); // Success Step inside wizard
+
         if (onJourneyCreated) {
-          onJourneyCreated(journeyRes);
-        } else {
-          setCurrentStep(6); // Success Step
+          onJourneyCreated(journeyRes, false);
         }
       } else {
         throw new Error("Invalid response received from submit.");

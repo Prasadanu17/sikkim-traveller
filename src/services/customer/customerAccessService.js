@@ -17,10 +17,16 @@ const SESSION_KEY = "st_active_tracking_session";
  * @returns {Promise<object>} Customer-safe booking record
  */
 export async function verifyTrackingAccess(trackingToken) {
-  const cleanToken = sanitizeText(trackingToken);
+  let cleanToken = sanitizeText(trackingToken);
+
+  // Extract clean single token if user accidentally double-pastes (e.g. ST-REQ-...ST-REQ-...)
+  const tokenMatch = cleanToken.match(/(ST-(?:REQ|TRK)-[A-Za-z0-9\-]+)/i);
+  if (tokenMatch) {
+    cleanToken = tokenMatch[1];
+  }
 
   if (!validateTrackingToken(cleanToken)) {
-    throw new Error("Invalid tracking token format. Tracking tokens are typically in format 'ST-TRK-XXXXX'.");
+    throw new Error("Invalid tracking token format. Tracking tokens are typically in format 'ST-REQ-YYYYMMDD-XXXX' or 'ST-TRK-XXXXX'.");
   }
 
   const isMockMode = import.meta.env.VITE_CUSTOMER_PORTAL_MOCK_MODE !== "false";

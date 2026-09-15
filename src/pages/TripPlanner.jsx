@@ -358,9 +358,11 @@ export default function TripPlanner({ onOpenBooking }) {
             plannerState={state}
             onClose={() => setIsBookingOpen(false)}
             onToggleCopilot={() => window.dispatchEvent(new CustomEvent("open-copilot"))}
-            onJourneyCreated={(res) => {
-              setIsBookingOpen(false);
-              setCreatedJourneyResult(res);
+            onJourneyCreated={(res, autoClose = true) => {
+              if (autoClose) {
+                setIsBookingOpen(false);
+                setCreatedJourneyResult(res);
+              }
             }}
           />
         )}
