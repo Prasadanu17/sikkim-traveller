@@ -2,7 +2,7 @@ import CopilotActionCard from "./CopilotActionCard";
 import SourceFreshnessBadge from "../planner/SourceFreshnessBadge";
 import { Sparkles, User } from "lucide-react";
 
-export default function CopilotMessage({ message, onApplyAction }) {
+export default function CopilotMessage({ message, onApplyAction, onCancelAction, isApplying = false }) {
   if (!message) return null;
 
   const isUser = message.role === "user";
@@ -46,7 +46,9 @@ export default function CopilotMessage({ message, onApplyAction }) {
         {actionCard && (
           <CopilotActionCard
             actionCard={actionCard}
-            onApply={(inst) => onApplyAction && onApplyAction(inst)}
+            isApplying={isApplying}
+            onApply={(card) => onApplyAction && onApplyAction(card)}
+            onCancel={(cardId) => onCancelAction && onCancelAction(cardId)}
           />
         )}
       </div>

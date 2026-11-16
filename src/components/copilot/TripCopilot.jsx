@@ -4,8 +4,14 @@ import CopilotMessage from "./CopilotMessage";
 import CopilotQuickActions from "./CopilotQuickActions";
 import CopilotConfirmationModal from "./CopilotConfirmationModal";
 import { processCopilotMessage } from "../../services/copilot/copilotService";
-import { getConversationHistory, clearCopilotMemory } from "../../services/copilot/copilotMemoryService";
-import { Sparkles, Send, X, RotateCcw, Bot } from "lucide-react";
+import {
+  getConversationHistory,
+  clearCopilotMemory,
+  addMessageToHistory,
+  recordAppliedRefinement,
+  getSessionConstraints
+} from "../../services/copilot/copilotMemoryService";
+import { Sparkles, Send, X, RotateCcw, Bot, Check, AlertCircle } from "lucide-react";
 
 export default function TripCopilot({ plannerState, onRefineItinerary }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,6 +19,9 @@ export default function TripCopilot({ plannerState, onRefineItinerary }) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [messages, setMessages] = useState(() => getConversationHistory());
   const [pendingConfirmation, setPendingConfirmation] = useState(null);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [appliedProposalIds, setAppliedProposalIds] = useState(() => new Set());
+  const [isApplyingProposal, setIsApplyingProposal] = useState(false);
 
   const chatFeedRef = useRef(null);
 
@@ -32,15 +41,17 @@ export default function TripCopilot({ plannerState, onRefineItinerary }) {
 
   // Initial welcome message if conversation is empty
   useEffect(() => {
-    if (messages.length === 0) {
-      setMessages([
-        {
-          id: "welcome-1",
-          role: "assistant",
-          content: `Hi! I'm your Sikkim Trip Copilot. I understand your ${plannerState?.duration || 5}-day journey. Ask me anything about your destinations, weather, budget optimizations, or trip refinement!`,
-          timestamp: new Date().toISOString()
-        }
-      ]);
+    const history = getConversationHistory();
+    if (history.length === 0) {
+      const welcome = addMessageToHistory(
+        "assistant",
+        `Hi! I'm your Sikkim Trip Copilot. I understand your ${plannerState?.duration || 5}-day journey. Ask me anything about your destinations, weather, budget optimizations, or trip refinement!`
+      );
+      if (welcome) {
+        setMessages([welcome]);
+      }
+    } else {
+      setMessages(history);
     }
   }, []);
 
@@ -67,9 +78,14 @@ export default function TripCopilot({ plannerState, onRefineItinerary }) {
       // If response includes an action proposal, handle or prompt confirmation
       if (response.actionCard && response.intent?.isMutating) {
         setPendingConfirmation({
+          id: response.actionCard.id,
           instruction: response.actionCard.refinementInstruction || query,
           title: response.actionCard.title,
-          description: response.actionCard.description
+          description: response.actionCard.description,
+          expectedImpact: response.actionCard.expectedImpact,
+          estimatedSavings: response.actionCard.estimatedSavings,
+          actionLabel: response.actionCard.actionLabel,
+          proposedChanges: response.actionCard.proposedChanges
         });
       }
     } catch (err) {
@@ -97,7 +113,11 @@ export default function TripCopilot({ plannerState, onRefineItinerary }) {
     }
   }, []);
 
-  const handleApplyAction = (instruction) => {
+  const handleApplyAction = async (target) => {
+    const card = typeof target === "object" ? target : { refinementInstruction: target };
+    const instruction = card.refinementInstruction || card.instruction || (typeof target === "string" ? target : "Apply trip change");
+    const proposalId = card.id || card.proposalId;
+
     if (instruction === "LAUNCH_BOOKING_WIZARD") {
       setPendingConfirmation(null);
       setIsOpen(false);
@@ -105,31 +125,94 @@ export default function TripCopilot({ plannerState, onRefineItinerary }) {
       return;
     }
 
-    if (onRefineItinerary) {
-      onRefineItinerary({ instruction });
-      setPendingConfirmation(null);
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: `apply-${Date.now()}`,
-          role: "assistant",
-          content: `✓ Applied your request: "${instruction}". Your itinerary has been updated!`,
-          timestamp: new Date().toISOString()
-        }
-      ]);
+    // Prevent duplicate execution if already applied or applying
+    if (proposalId && appliedProposalIds.has(proposalId)) {
+      return;
     }
+    if (isApplyingProposal) return;
+
+    setIsApplyingProposal(true);
+
+    try {
+      if (proposalId) {
+        setAppliedProposalIds((prev) => new Set(prev).add(proposalId));
+      }
+
+      if (onRefineItinerary) {
+        recordAppliedRefinement(instruction);
+        await onRefineItinerary({
+          instruction,
+          changes: card.proposedChanges || {}
+        });
+      }
+
+      // Mark card as applied in message history state
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.metadata?.actionCard && (m.metadata.actionCard.id === proposalId || m.metadata.actionCard.refinementInstruction === instruction)) {
+            return {
+              ...m,
+              metadata: {
+                ...m.metadata,
+                actionCard: {
+                  ...m.metadata.actionCard,
+                  status: "applied"
+                }
+              }
+            };
+          }
+          return m;
+        })
+      );
+
+      setPendingConfirmation(null);
+      addMessageToHistory(
+        "assistant",
+        `✓ Applied your request: "${instruction}". Your itinerary and planner preferences have been updated!`
+      );
+      setMessages(getConversationHistory());
+    } catch (err) {
+      console.warn("[TripCopilot] Error applying modification:", err);
+    } finally {
+      setIsApplyingProposal(false);
+    }
+  };
+
+  const handleCancelAction = (target) => {
+    const cardId = typeof target === "object" ? target.id : target;
+    setPendingConfirmation(null);
+
+    // Mark proposal as cancelled in message state
+    setMessages((prev) =>
+      prev.map((m) => {
+        if (m.metadata?.actionCard && (m.metadata.actionCard.id === cardId || !cardId)) {
+          return {
+            ...m,
+            metadata: {
+              ...m.metadata,
+              actionCard: {
+                ...m.metadata.actionCard,
+                status: "cancelled"
+              }
+            }
+          };
+        }
+        return m;
+      })
+    );
+
+    addMessageToHistory("assistant", "Understood, I've kept your current itinerary unchanged.");
+    setMessages(getConversationHistory());
   };
 
   const handleClearChat = () => {
     clearCopilotMemory();
-    setMessages([
-      {
-        id: "welcome-reset",
-        role: "assistant",
-        content: "New conversation started. I still remember your trip context! How can I help you next?",
-        timestamp: new Date().toISOString()
-      }
-    ]);
+    const welcome = addMessageToHistory(
+      "assistant",
+      "New conversation started. I still remember your trip context! How can I help you next?"
+    );
+    setMessages([welcome]);
+    setShowResetConfirm(false);
   };
 
   return (
@@ -177,7 +260,7 @@ export default function TripCopilot({ plannerState, onRefineItinerary }) {
 
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={handleClearChat}
+                    onClick={() => setShowResetConfirm(!showResetConfirm)}
                     className="p-1.5 rounded-lg text-neutral-400 hover:text-parchment hover:bg-white/10 transition"
                     title="New Conversation"
                   >
@@ -193,13 +276,39 @@ export default function TripCopilot({ plannerState, onRefineItinerary }) {
                 </div>
               </div>
 
+              {/* RESET CONFIRMATION BAR */}
+              {showResetConfirm && (
+                <div className="bg-pine-dark text-parchment p-2.5 px-4 text-xs flex items-center justify-between gap-2 border-b border-gold/30">
+                  <div className="flex items-center gap-1.5">
+                    <AlertCircle size={14} className="text-gold shrink-0" />
+                    <span>Clear conversation history?</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      onClick={() => setShowResetConfirm(false)}
+                      className="px-2 py-0.5 rounded text-[11px] text-neutral-300 hover:bg-white/10"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={handleClearChat}
+                      className="px-2.5 py-0.5 rounded bg-gold text-pine font-bold text-[11px] hover:bg-gold-light"
+                    >
+                      Confirm
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* CHAT MESSAGES FEED */}
               <div ref={chatFeedRef} className="flex-1 overflow-y-auto p-4 space-y-4 bg-cream/30">
                 {messages.map((msg) => (
                   <CopilotMessage
                     key={msg.id}
                     message={msg}
+                    isApplying={isApplyingProposal}
                     onApplyAction={handleApplyAction}
+                    onCancelAction={handleCancelAction}
                   />
                 ))}
 
@@ -259,8 +368,12 @@ export default function TripCopilot({ plannerState, onRefineItinerary }) {
         isOpen={Boolean(pendingConfirmation)}
         title={pendingConfirmation?.title}
         description={pendingConfirmation?.description}
-        onConfirm={() => handleApplyAction(pendingConfirmation?.instruction)}
-        onCancel={() => setPendingConfirmation(null)}
+        expectedImpact={pendingConfirmation?.expectedImpact}
+        estimatedSavings={pendingConfirmation?.estimatedSavings}
+        actionLabel={pendingConfirmation?.actionLabel}
+        isApplying={isApplyingProposal}
+        onConfirm={() => handleApplyAction(pendingConfirmation)}
+        onCancel={() => handleCancelAction(pendingConfirmation?.id)}
       />
     </>
   );

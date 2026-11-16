@@ -610,50 +610,103 @@ export default function useTripPlanner() {
     }
   };
 
-  // MODULE 6: REFINE ITINERARY ACTION
+  // MODULE 6 & MODULE C: REFINE ITINERARY & MUTATE PLANNER ACTION
   const refineItineraryAction = async (requestInput) => {
-    if (!state.itinerary.current) return;
+    const changes = typeof requestInput === "object" ? requestInput?.changes || {} : {};
 
-    setState((prev) => ({
-      ...prev,
-      itinerary: { ...prev.itinerary, status: "generating" }
-    }));
-    setIsCalculating(true);
+    // 1. Synchronize underlying planner preferences if provided in mutation changes
+    setState((prev) => {
+      let updated = { ...prev };
 
-    try {
-      const result = await refineTripItinerary(state, state.itinerary.current, requestInput);
-      setState((prev) => {
-        const historyStack = [prev.itinerary.current, ...(prev.itinerary.history || [])].slice(0, 5);
-        return {
+      if (changes.duration) {
+        updated.duration = Number(changes.duration);
+      }
+      if (changes.budgetLevel || changes.budgetCap) {
+        updated.budget = {
+          ...updated.budget,
+          level: changes.budgetLevel || updated.budget.level,
+          targetMax: changes.budgetCap || updated.budget.targetMax
+        };
+      }
+      if (changes.transportMode) {
+        updated.transportation = {
+          ...updated.transportation,
+          preferredModes: [changes.transportMode]
+        };
+      }
+      if (changes.accommodationType) {
+        updated.accommodation = {
+          ...updated.accommodation,
+          types: [changes.accommodationType]
+        };
+      }
+      if (changes.addDestination) {
+        const destSlug = String(changes.addDestination).toLowerCase();
+        if (!updated.destinations.selected.includes(destSlug)) {
+          updated.destinations = {
+            ...updated.destinations,
+            selected: [...updated.destinations.selected, destSlug]
+          };
+        }
+      }
+      if (changes.removeDestination) {
+        const destSlug = String(changes.removeDestination).toLowerCase();
+        updated.destinations = {
+          ...updated.destinations,
+          selected: updated.destinations.selected.filter((s) => s !== destSlug)
+        };
+      }
+
+      return updated;
+    });
+
+    // 2. If an itinerary has already been generated, refine it
+    if (state.itinerary.current) {
+      setState((prev) => ({
+        ...prev,
+        itinerary: { ...prev.itinerary, status: "generating" }
+      }));
+      setIsCalculating(true);
+
+      try {
+        const result = await refineTripItinerary(state, state.itinerary.current, requestInput);
+        setState((prev) => {
+          const historyStack = [prev.itinerary.current, ...(prev.itinerary.history || [])].slice(0, 5);
+          return {
+            ...prev,
+            itinerary: {
+              ...prev.itinerary,
+              status: result.source === "ai" ? "success" : "fallback",
+              previous: prev.itinerary.current,
+              current: result.updatedItinerary,
+              history: historyStack,
+              isStale: false,
+              source: result.source,
+              explanation: result.explanation,
+              tradeoffNotice: result.tradeoffNotice,
+              error: null
+            }
+          };
+        });
+        setIsCalculating(false);
+
+        fetchRealtimeIntelligenceAction(result.updatedItinerary);
+        return { success: true, updatedItinerary: result.updatedItinerary };
+      } catch (err) {
+        setState((prev) => ({
           ...prev,
           itinerary: {
             ...prev.itinerary,
-            status: result.source === "ai" ? "success" : "fallback",
-            previous: prev.itinerary.current,
-            current: result.updatedItinerary,
-            history: historyStack,
-            isStale: false,
-            source: result.source,
-            explanation: result.explanation,
-            tradeoffNotice: result.tradeoffNotice,
-            error: null
+            status: "error",
+            error: err.message
           }
-        };
-      });
-      setIsCalculating(false);
-
-      fetchRealtimeIntelligenceAction(result.updatedItinerary);
-    } catch (err) {
-      setState((prev) => ({
-        ...prev,
-        itinerary: {
-          ...prev.itinerary,
-          status: "error",
-          error: err.message
-        }
-      }));
-      setIsCalculating(false);
+        }));
+        setIsCalculating(false);
+        return { success: false, error: err.message };
+      }
     }
+
+    return { success: true, updatedItinerary: null };
   };
 
   // MODULE 6: UNDO ITINERARY CHANGE

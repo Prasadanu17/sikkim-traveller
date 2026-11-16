@@ -7,6 +7,7 @@ import { destinations as allDests } from "../../data/destinations";
 export function parseRefinementIntent(requestInput, options = {}) {
   const text = (typeof requestInput === "string" ? requestInput : requestInput?.instruction || "").toLowerCase().trim();
   const chipMode = typeof requestInput === "object" ? requestInput?.mode : null;
+  const directChanges = typeof requestInput === "object" && requestInput?.changes ? requestInput.changes : {};
 
   // Default intent object
   const intentResult = {
@@ -15,9 +16,38 @@ export function parseRefinementIntent(requestInput, options = {}) {
     targetDay: null,
     targetDestination: null,
     targetActivity: null,
-    changes: {},
+    changes: { ...directChanges },
     rawRequest: text || chipMode || ""
   };
+
+  // If structured changes are explicitly passed from a mutation card
+  if (directChanges.targetDay) {
+    intentResult.targetDay = directChanges.targetDay;
+    intentResult.intent = "change_day_pace";
+  }
+  if (directChanges.addDestination) {
+    intentResult.intent = "add_destination";
+    intentResult.targetDestination = directChanges.addDestination;
+    intentResult.scope = "destination";
+  }
+  if (directChanges.removeDestination) {
+    intentResult.intent = "remove_destination";
+    intentResult.targetDestination = directChanges.removeDestination;
+    intentResult.scope = "destination";
+  }
+  if (directChanges.duration) {
+    intentResult.intent = "change_duration";
+    intentResult.scope = "duration";
+  }
+  if (directChanges.transportMode) {
+    intentResult.intent = "change_transport";
+  }
+  if (directChanges.accommodationType) {
+    intentResult.intent = "change_accommodation";
+  }
+  if (directChanges.budgetCap) {
+    intentResult.intent = "reduce_budget";
+  }
 
   // Check preset chips first if provided
   if (chipMode) {

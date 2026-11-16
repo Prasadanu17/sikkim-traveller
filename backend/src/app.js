@@ -9,6 +9,7 @@ import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import customerRoutes from './routes/customer.js';
 import operationsRoutes from './routes/operations.js';
 import realtimeRoutes from './routes/realtime.js';
+import aiRoutes from './routes/ai.js';
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use(helmetMiddleware);
 app.use(corsMiddleware);
 
 // Mount production routes
+app.use('/api', aiRoutes);
 app.use('/api/customer', customerRoutes);
 app.use('/api/operations', operationsRoutes);
 app.use('/api/realtime', realtimeRoutes);

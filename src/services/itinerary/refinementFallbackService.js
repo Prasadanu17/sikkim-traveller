@@ -42,24 +42,53 @@ export function refineFallbackItinerary(existingItinerary, tripContext, intent) 
     });
   }
 
-  // 5. Trip Structural Change (Destination remove/add, duration extend)
+  // 5. Trip Structural Change (Destination remove/add, duration extend, budget reduction)
   // Modify tripContext and re-run deterministic fallback generator
   const updatedContext = JSON.parse(JSON.stringify(tripContext));
 
-  if (intentType === "remove_destination" && intent.targetDestination) {
+  if (intentType === "remove_destination" && (intent.targetDestination || changes.removeDestination)) {
+    const targetSlug = intent.targetDestination || changes.removeDestination;
     updatedContext.destinations = updatedContext.destinations.filter(
-      (d) => d.slug !== intent.targetDestination
+      (d) => d.slug !== targetSlug
     );
+  }
+
+  if (intentType === "add_destination" && (intent.targetDestination || changes.addDestination)) {
+    const targetSlug = intent.targetDestination || changes.addDestination;
+    if (!updatedContext.destinations.some((d) => d.slug === targetSlug)) {
+      updatedContext.destinations.push({
+        slug: targetSlug,
+        name: targetSlug.charAt(0).toUpperCase() + targetSlug.slice(1),
+        district: targetSlug.includes("pelling") || targetSlug.includes("yuksom") ? "West Sikkim" : "East Sikkim"
+      });
+    }
+  }
+
+  if (intentType === "change_duration" && (changes.duration || intent.changes?.duration)) {
+    updatedContext.duration = Number(changes.duration || intent.changes?.duration);
   }
 
   if (intentType === "reduce_budget") {
     updatedContext.budget.level = "budget";
+    if (changes.budgetCap) {
+      updatedContext.budget.estimatedMin = Math.round(changes.budgetCap * 0.85);
+      updatedContext.budget.estimatedMax = changes.budgetCap;
+    }
     updatedContext.transportation.preferredModes = ["shared-sumo"];
+    updatedContext.accommodation.types = ["homestay"];
   }
 
   if (intentType === "increase_budget") {
     updatedContext.budget.level = "premium";
     updatedContext.transportation.preferredModes = ["premium-private"];
+  }
+
+  if (changes.transportMode) {
+    updatedContext.transportation.preferredModes = [changes.transportMode];
+  }
+
+  if (changes.accommodationType) {
+    updatedContext.accommodation.types = [changes.accommodationType];
   }
 
   // Re-generate deterministic itinerary using modified context

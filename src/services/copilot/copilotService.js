@@ -1,6 +1,12 @@
 import { buildCopilotContext } from "./copilotContextService";
 import { parseCopilotIntent } from "./copilotIntentService";
-import { getSessionConstraints, updateSessionConstraints, addMessageToHistory } from "./copilotMemoryService";
+import {
+  getSessionConstraints,
+  updateSessionConstraints,
+  addMessageToHistory,
+  addPreferredDestination,
+  addExcludedDestination
+} from "./copilotMemoryService";
 import { sanitizeUserInput, validateCopilotResponse } from "./copilotSafetyService";
 import { executeFallbackCopilotRequest } from "./copilotFallbackService";
 
@@ -24,9 +30,27 @@ export async function processCopilotMessage(userMessageText, plannerState) {
   // 3. Intent Detection & Entity Extraction
   const intent = parseCopilotIntent(cleanInput);
 
-  // 4. Update Memory Constraints if user specifies preference (e.g. "no long drives")
+  // 4. Update Memory Constraints based on detected user preferences
   if (intent.intent === "REDUCE_DRIVING") {
     updateSessionConstraints({ avoidLongDrives: true });
+  }
+  if (intent.entities?.budgetAmount) {
+    updateSessionConstraints({ budgetCap: intent.entities.budgetAmount });
+  }
+  if (intent.entities?.accommodationType) {
+    updateSessionConstraints({ preferredStay: intent.entities.accommodationType });
+  }
+  if (intent.entities?.transportMode) {
+    updateSessionConstraints({ preferredTransport: intent.entities.transportMode });
+  }
+  if (intent.entities?.pace) {
+    updateSessionConstraints({ pacePreference: intent.entities.pace });
+  }
+  if (intent.intent === "ADD_DESTINATION" && intent.entities?.destinationSlug) {
+    addPreferredDestination(intent.entities.destinationSlug);
+  }
+  if (intent.intent === "REMOVE_DESTINATION" && intent.entities?.destinationSlug) {
+    addExcludedDestination(intent.entities.destinationSlug);
   }
 
   // 5. Secure Backend API Proxy check or deterministic fallback execution

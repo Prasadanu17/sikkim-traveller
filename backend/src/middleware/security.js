@@ -67,3 +67,13 @@ export const paymentRateLimit = rateLimit({
   max: 5,
   message: { error: { code: 'RATE_LIMITED', message: 'Too many payment requests.' } }
 });
+
+/** Endpoint-specific rate limiter for AI generation and Copilot */
+export const aiRateLimit = rateLimit({
+  windowMs: env.AI_RATE_LIMIT_WINDOW_MS || 60000,
+  max: env.AI_RATE_LIMIT_MAX_REQUESTS || 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: { code: 'RATE_LIMITED', message: 'AI request limit reached. Please wait before generating again.' } },
+  keyGenerator: (req) => req.ip
+});

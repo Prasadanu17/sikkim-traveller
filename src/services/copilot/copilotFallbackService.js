@@ -1,5 +1,6 @@
 import { executeCopilotTool } from "./copilotToolExecutor";
 import { destinations as allDests } from "../../data/destinations";
+import { buildMutationProposal } from "./copilotMutationService";
 
 /**
  * Deterministic Copilot Fallback Executor.
@@ -10,33 +11,23 @@ export async function executeFallbackCopilotRequest(plannerState, intent, normal
   const { intent: intentType, entities } = intent;
   const currentItinerary = plannerState.itinerary?.current;
 
-  // 1. REDUCE BUDGET
-  if (intentType === "REDUCE_BUDGET") {
-    const budgetRes = await executeCopilotTool("getBudgetEstimate", {
-      duration: plannerState.duration,
-      travelers: plannerState.travelers,
-      destinations: plannerState.destinations.selected,
-      travelStyle: "relaxed",
-      budgetLevel: "budget",
-      accommodationTypes: plannerState.accommodation.types,
-      transportModes: ["shared-sumo"]
-    });
+  // ─── ACTIONABLE MUTATION PROPOSALS (Categories A–F) ───
+  if (intent.isMutating && intentType !== "BOOK_TRIP") {
+    const { validation, proposal } = buildMutationProposal({ intent, plannerState });
 
-    const currentCost = currentItinerary?.overview?.estimatedCost?.min || 35000;
-    const newCost = budgetRes.data?.estimatedRange?.min || 28000;
-    const diff = currentCost - newCost;
+    if (!validation.isValid) {
+      return {
+        text: `I cannot apply that modification: ${validation.errors.join(". ")}`,
+        actionCard: null
+      };
+    }
 
-    return {
-      text: `I calculated potential budget optimizations for your ${plannerState.duration}-day trip. Switching to shared transport and budget stays can save approximately ₹${diff.toLocaleString("en-IN")}.`,
-      actionCard: {
-        type: "MUTATION_PROPOSAL",
-        title: "Lower Your Trip Cost",
-        description: "Switching from private cab to shared transport and budget stays will reduce your estimated budget.",
-        estimatedSavings: `Save ~₹${diff.toLocaleString("en-IN")}`,
-        refinementInstruction: "Make the trip cheaper by using shared transport and budget stays.",
-        actionLabel: "Apply Savings Option"
-      }
-    };
+    if (proposal) {
+      return {
+        text: proposal.description,
+        actionCard: proposal
+      };
+    }
   }
 
   // 2. EXPLAIN DESTINATION ("Why Lachung?")
