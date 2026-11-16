@@ -172,3 +172,4 @@ export function getDestinationGeoData(slugOrName) {
 
   return partial || null;
 }
+

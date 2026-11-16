@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sun, Sunset, Moon, Car, Bed, AlertTriangle, Info, ChevronDown, ChevronUp, Clock, Edit3, ShieldAlert } from "lucide-react";
+import AltitudeSafetyGauge from "./AltitudeSafetyGauge";
+import { getDestinationGeoData } from "../../data/destinationCoordinates";
 
 export default function ItineraryDayCard({ day, isDefaultExpanded = true, forceExpand = false, onEditDay, dayRealtimeAlerts = [] }) {
   const [internalExpanded, setInternalExpanded] = useState(isDefaultExpanded);
   const isExpanded = forceExpand || internalExpanded;
+
+  const geoData = getDestinationGeoData(day.baseLocation);
 
   const formatPrice = (val) => {
     return new Intl.NumberFormat("en-IN", {
@@ -34,6 +38,14 @@ export default function ItineraryDayCard({ day, isDefaultExpanded = true, forceE
               <span className="text-[10px] uppercase tracking-wider font-bold text-gold-dark bg-gold/10 px-2 py-0.5 rounded">
                 📍 {day.baseLocation}
               </span>
+              {geoData?.elevationM && (
+                <AltitudeSafetyGauge
+                  compact
+                  elevationM={geoData.elevationM}
+                  destinationName={day.baseLocation}
+                  transitLeg={day.travel?.[0] || day.travelSegments?.[0]}
+                />
+              )}
               {day.date && (
                 <span className="text-[10px] text-neutral-400 font-semibold">
                   {new Date(day.date).toLocaleDateString("en-US", { month: "short", day: "numeric" })}

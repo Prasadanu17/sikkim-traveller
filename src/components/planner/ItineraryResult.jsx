@@ -18,7 +18,8 @@ import {
   AlertTriangle,
   Clock,
   CheckCircle2,
-  DollarSign
+  DollarSign,
+  Download
 } from "lucide-react";
 import ItineraryDayCard from "./ItineraryDayCard";
 import RegenerationModal from "./RegenerationModal";
@@ -27,6 +28,9 @@ import DayEditModal from "./DayEditModal";
 import ItineraryDiffView from "./ItineraryDiffView";
 import TravelAlertBanner from "./TravelAlertBanner";
 import TravelIntelligencePanel from "./TravelIntelligencePanel";
+import SikkimRouteMap from "./SikkimRouteMap";
+import TripAltitudeOverview from "./TripAltitudeOverview";
+import { downloadItineraryIcs } from "../../services/calendar/icsExportService";
 
 export default function ItineraryResult({
   itineraryState,
@@ -44,12 +48,23 @@ export default function ItineraryResult({
   const [editingDay, setEditingDay] = useState(null);
   const [diffViewData, setDiffViewData] = useState(null);
   const [forceExpandAll, setForceExpandAll] = useState(false);
+  const [calendarDownloaded, setCalendarDownloaded] = useState(false);
 
   const { current: itinerary, history, isStale, source, explanation, tradeoffNotice } = itineraryState;
 
   if (!itinerary) return null;
 
   const { overview, whyThisTripWorks, days, budget, importantNotes } = itinerary;
+
+  const handleDownloadCalendar = () => {
+    try {
+      downloadItineraryIcs(itinerary);
+      setCalendarDownloaded(true);
+      setTimeout(() => setCalendarDownloaded(false), 3500);
+    } catch (err) {
+      console.error("Failed to export calendar:", err);
+    }
+  };
 
   const formatPrice = (val) => {
     return new Intl.NumberFormat("en-IN", {
@@ -134,6 +149,17 @@ export default function ItineraryResult({
                   <Undo2 size={11} /> Undo Change
                 </button>
               )}
+              <button
+                onClick={handleDownloadCalendar}
+                className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full border transition cursor-pointer ${
+                  calendarDownloaded
+                    ? "bg-emerald-500 text-white border-emerald-400"
+                    : "bg-white/10 hover:bg-gold hover:text-pine text-parchment border-white/20"
+                }`}
+                title="Download .ics calendar file"
+              >
+                <CalendarIcon size={11} /> {calendarDownloaded ? "✓ Calendar Downloaded" : "Export .ics"}
+              </button>
               <span className={`text-[10px] uppercase font-bold tracking-wider px-2.5 py-0.5 rounded ${
                 source === "ai" ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" : "bg-gold/20 text-gold-light"
               }`}>
@@ -209,6 +235,12 @@ export default function ItineraryResult({
           </div>
         </div>
       )}
+
+      {/* SIKKIM ROUTE MAP & ALTITUDE PROFILE SECTION */}
+      <div className="space-y-6 print:hidden">
+        <SikkimRouteMap itinerary={itinerary} />
+        <TripAltitudeOverview itinerary={itinerary} />
+      </div>
 
       {/* MAIN TWO-COLUMN LAYOUT: ITINERARY + REFINEMENT SIDEBAR */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
@@ -353,6 +385,19 @@ export default function ItineraryResult({
             className="inline-flex items-center gap-1.5 rounded-full bg-white border border-neutral-300 text-ink text-xs font-semibold px-4 py-2.5 hover:border-gold hover:text-gold-dark transition"
           >
             <Printer size={13} /> Print / Save
+          </button>
+          <button
+            onClick={handleDownloadCalendar}
+            className={`inline-flex items-center gap-1.5 rounded-full border text-xs font-semibold px-4 py-2.5 transition ${
+              calendarDownloaded
+                ? "bg-emerald-600 text-white border-emerald-600"
+                : "bg-gold/15 border-gold/40 text-pine hover:bg-gold hover:text-pine"
+            }`}
+            title="Export itinerary to Google Calendar, Apple Calendar, or Microsoft Outlook"
+          >
+            <CalendarIcon size={13} className={calendarDownloaded ? "text-white" : "text-gold-dark"} />
+            <Download size={12} />
+            {calendarDownloaded ? "Calendar Downloaded!" : "Export Calendar (.ics)"}
           </button>
         </div>
 

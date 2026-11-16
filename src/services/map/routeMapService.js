@@ -143,3 +143,4 @@ export function buildItineraryRouteModel(itinerary) {
     disclaimer: "Route lines indicate travel sequence between scheduled destinations. Road travel follows mountain passes and state highways with driving durations as noted."
   };
 }
+
