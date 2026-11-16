@@ -6,7 +6,7 @@
 
 import { z } from 'zod';
 import { generateItineraryAI, refineItineraryAI } from '../services/ai/itineraryAIService.js';
-import { processCopilotAI } from '../services/ai/copilotAIService.js';
+import { processCopilotAI, streamCopilotAI } from '../services/ai/copilotAIService.js';
 
 const generateSchema = z.object({
   tripContext: z.record(z.any()).refine((val) => Object.keys(val).length > 0, {
@@ -14,7 +14,8 @@ const generateSchema = z.object({
   }),
   regenerationPreference: z.any().optional(),
   systemInstruction: z.string().max(5000).optional(),
-  userPrompt: z.string().max(5000).optional()
+  userPrompt: z.string().max(5000).optional(),
+  language: z.enum(['en', 'hi', 'ne']).optional()
 });
 
 const refineSchema = z.object({
@@ -23,13 +24,15 @@ const refineSchema = z.object({
     message: 'existingItinerary must be a non-empty object'
   }),
   intent: z.record(z.any()).optional(),
-  requestInput: z.string().max(2000).optional()
+  requestInput: z.string().max(2000).optional(),
+  language: z.enum(['en', 'hi', 'ne']).optional()
 });
 
 const copilotSchema = z.object({
   message: z.string().min(1, 'Message cannot be empty').max(1500, 'Message too long'),
   intent: z.record(z.any()).optional(),
-  context: z.record(z.any()).optional()
+  context: z.record(z.any()).optional(),
+  language: z.enum(['en', 'hi', 'ne']).optional()
 });
 
 export async function handleGenerateItinerary(req, res, next) {
@@ -76,4 +79,62 @@ export async function handleCopilot(req, res, next) {
     next(err);
   }
 }
+
+/**
+ * Server-Sent Events (SSE) streaming endpoint for progressive Copilot responses.
+ */
+export async function handleCopilotStream(req, res, next) {
+  try {
+    const validated = copilotSchema.parse(req.body);
+
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    if (res.flushHeaders) res.flushHeaders();
+
+    const abortController = new AbortController();
+    let isClientClosed = false;
+
+    req.on('close', () => {
+      isClientClosed = true;
+      abortController.abort();
+    });
+
+    const sendEvent = (eventData) => {
+      if (isClientClosed) return;
+      res.write(`data: ${JSON.stringify(eventData)}\n\n`);
+    };
+
+    await streamCopilotAI({
+      message: validated.message,
+      intent: validated.intent,
+      context: validated.context,
+      language: validated.language,
+      signal: abortController.signal,
+      onChunk: (chunk) => {
+        sendEvent({ type: 'chunk', text: chunk });
+      },
+      onActionCard: (card) => {
+        sendEvent({ type: 'actionCard', actionCard: card });
+      },
+      onDone: (summary) => {
+        sendEvent({ type: 'done', ...summary });
+        res.end();
+      },
+      onError: (err) => {
+        sendEvent({ type: 'error', message: err.message });
+        res.end();
+      }
+    });
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return res.status(400).json({
+        error: { code: 'INVALID_INPUT', details: err.errors.map(e => e.message) }
+      });
+    }
+    next(err);
+  }
+}
+
 

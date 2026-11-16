@@ -41,11 +41,12 @@ function validateItineraryOutput(itinerary, expectedDuration) {
   return true;
 }
 
-export async function generateItineraryAI({ tripContext, regenerationPreference, systemInstruction, userPrompt }) {
+export async function generateItineraryAI({ tripContext, regenerationPreference, systemInstruction, userPrompt, language }) {
   const duration = Number(tripContext?.duration) || 5;
+  const targetLang = language || tripContext?.language || 'en';
 
   if (!isGeminiConfigured()) {
-    const fallback = generateBackendFallbackItinerary(tripContext, regenerationPreference);
+    const fallback = generateBackendFallbackItinerary({ ...tripContext, language: targetLang }, regenerationPreference);
     return {
       itinerary: fallback,
       source: 'fallback',
@@ -54,8 +55,13 @@ export async function generateItineraryAI({ tripContext, regenerationPreference,
   }
 
   try {
-    const safeSystem = sanitizePromptInput(systemInstruction || 'You are an expert Sikkim Tourism Architect.');
-    const safePrompt = sanitizePromptInput(userPrompt || `Generate a ${duration}-day Sikkim trip itinerary.`);
+    const langDesc = targetLang === 'hi' ? 'Hindi (हिन्दी)' : targetLang === 'ne' ? 'Nepali (नेपाली)' : 'English';
+    const langInstruction = targetLang !== 'en'
+      ? `\nTarget Language: Provide all narrative fields (tripTitle, summary, overview, day titles, activity titles/descriptions, importantNotes) in ${langDesc}. Preserve structural keys (dayNumber, baseLocation, mode, stay.comfort) in English.`
+      : '';
+
+    const safeSystem = sanitizePromptInput((systemInstruction || 'You are an expert Sikkim Tourism Architect.') + langInstruction);
+    const safePrompt = sanitizePromptInput((userPrompt || `Generate a ${duration}-day Sikkim trip itinerary.`) + (targetLang !== 'en' ? ` Language: ${langDesc}.` : ''));
 
     const rawResponse = await callGemini({
       systemInstruction: safeSystem,
@@ -99,12 +105,13 @@ export async function generateItineraryAI({ tripContext, regenerationPreference,
   }
 }
 
-export async function refineItineraryAI({ tripContext, existingItinerary, intent, requestInput }) {
+export async function refineItineraryAI({ tripContext, existingItinerary, intent, requestInput, language }) {
   const duration = Number(tripContext?.duration) || existingItinerary?.overview?.duration || 5;
+  const targetLang = language || tripContext?.language || 'en';
 
   if (!isGeminiConfigured()) {
     // Return modified fallback
-    const fallback = generateBackendFallbackItinerary(tripContext, intent);
+    const fallback = generateBackendFallbackItinerary({ ...tripContext, language: targetLang }, intent);
     return {
       itinerary: fallback,
       source: 'fallback',
@@ -113,13 +120,15 @@ export async function refineItineraryAI({ tripContext, existingItinerary, intent
   }
 
   try {
-    const safeInput = sanitizePromptInput(requestInput || 'Refine itinerary pace');
+    const langDesc = targetLang === 'hi' ? 'Hindi (हिन्दी)' : targetLang === 'ne' ? 'Nepali (नेपाली)' : 'English';
+    const langNote = targetLang !== 'en' ? `\nTarget Language: Provide narrative text in ${langDesc}. Preserve structural keys in English.` : '';
+    const safeInput = sanitizePromptInput((requestInput || 'Refine itinerary pace') + (targetLang !== 'en' ? ` (Language: ${langDesc})` : ''));
     const systemPrompt = `You are an expert Sikkim Tourism Architect.
 Modify the following existing Sikkim itinerary according to this refinement request: "${safeInput}".
 STRICT CONSTRAINTS:
 1. Maintain total duration of exactly ${duration} days.
 2. Return ONLY valid JSON matching the exact itinerary schema. No conversational filler or markdown codeblocks.
-3. Realistic transit times across Sikkim mountains (e.g. Gangtok to Lachung takes 6 hours).`;
+3. Realistic transit times across Sikkim mountains (e.g. Gangtok to Lachung takes 6 hours).${langNote}`;
 
     const userPromptText = `EXISTING ITINERARY:
 ${JSON.stringify(existingItinerary, null, 2)}

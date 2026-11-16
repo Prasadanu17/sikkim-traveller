@@ -5,7 +5,9 @@
  * action card proposals, and robust fallback responses.
  */
 
-import { callGemini, isGeminiConfigured } from './geminiClient.js';
+import { callGemini, streamGemini, isGeminiConfigured } from './geminiClient.js';
+import { detectLanguage, getLocalizedDestinationName } from '../i18n/languageService.js';
+import { getMultilingualTemplates } from '../i18n/multilingualTemplates.js';
 
 const INJECTION_PATTERNS = [
   /ignore (all )?previous instructions/i,
@@ -28,63 +30,66 @@ function sanitizeCopilotInput(text) {
   return clean;
 }
 
-function getDeterministicCopilotFallback(cleanInput, intent, context) {
+function getDeterministicCopilotFallback(cleanInput, intent, context, preferredLanguage = null) {
+  const lang = preferredLanguage || context?.language || detectLanguage(cleanInput) || 'en';
+  const t = getMultilingualTemplates(lang);
+
   const lower = cleanInput.toLowerCase();
   const intentType = intent?.intent || 'GENERAL_INQUIRY';
   const duration = context?.duration || 5;
   const currentCost = context?.budget?.estimatedMax || 45000;
 
-  if (intentType === 'REDUCE_BUDGET' || lower.includes('cheaper') || lower.includes('budget') || lower.includes('cost')) {
+  if (intentType === 'REDUCE_BUDGET' || lower.includes('cheaper') || lower.includes('budget') || lower.includes('cost') || lower.includes('कम') || lower.includes('सस्ता') || lower.includes('घटाउनु')) {
     const savings = Math.round(currentCost * 0.2);
     return {
-      text: `I analyzed your ${duration}-day Sikkim trip. Switching to shared transportation (Sumo) and boutique homestays can save approximately ₹${savings.toLocaleString('en-IN')}.`,
+      text: t.budgetReduced(duration, savings),
       actionCard: {
         id: `prop_${Date.now()}_budget`,
         type: 'MUTATION_PROPOSAL',
         category: 'BUDGET',
-        title: 'Lower Your Trip Cost',
-        description: 'Switching from private cab to shared transport and budget homestays will reduce your estimated budget.',
+        title: t.budgetCardTitle,
+        description: t.budgetCardDesc,
         proposedChanges: { budgetLevel: 'budget', transportMode: 'shared-sumo', accommodationType: 'homestay' },
         expectedImpact: `Reduces trip cost by ~₹${savings.toLocaleString('en-IN')}`,
         estimatedSavings: `Save ~₹${savings.toLocaleString('en-IN')}`,
         refinementInstruction: 'Make the trip cheaper by using shared transport and homestays.',
-        actionLabel: 'Apply Savings Option'
+        actionLabel: t.budgetActionLabel
       },
-      sourceBadge: 'Deterministic Intelligence'
+      sourceBadge: 'Deterministic Intelligence',
+      language: lang
     };
   }
 
-  if (intentType === 'MODIFY_DAY' || lower.includes('relaxed') || lower.includes('rest time') || lower.includes('slow')) {
+  if (intentType === 'MODIFY_DAY' || lower.includes('relaxed') || lower.includes('rest time') || lower.includes('slow') || lower.includes('आराम') || lower.includes('शान्त')) {
     const dayNum = intent?.entities?.dayNumber || 2;
     return {
-      text: `I can adjust Day ${dayNum} to incorporate more rest time, slower morning pacing, and dedicated relaxation.`,
+      text: t.dayRelaxed(dayNum),
       actionCard: {
         id: `prop_${Date.now()}_day`,
         type: 'MUTATION_PROPOSAL',
         category: 'DAY_PACE',
-        title: `Make Day ${dayNum} More Relaxed`,
-        description: `Lightens Day ${dayNum} activity density to allow restful exploration and leisure.`,
+        title: t.dayCardTitle(dayNum),
+        description: t.dayCardDesc(dayNum),
         proposedChanges: { targetDay: dayNum, pace: 'relaxed' },
         expectedImpact: 'Adds flexible rest periods and eliminates transit rush',
         estimatedSavings: null,
         refinementInstruction: `Make Day ${dayNum} more relaxed with dedicated rest time.`,
-        actionLabel: `Relax Day ${dayNum}`
+        actionLabel: t.dayActionLabel(dayNum)
       },
-      sourceBadge: 'Deterministic Intelligence'
+      sourceBadge: 'Deterministic Intelligence',
+      language: lang
     };
   }
 
-  if (intentType === 'CHANGE_TRANSPORT' || intentType === 'REDUCE_DRIVING' || lower.includes('shared transport') || lower.includes('sumo') || lower.includes('drive')) {
-    const isShared = lower.includes('shared') || lower.includes('sumo');
+  if (intentType === 'CHANGE_TRANSPORT' || intentType === 'REDUCE_DRIVING' || lower.includes('shared transport') || lower.includes('sumo') || lower.includes('drive') || lower.includes('गाड़ी') || lower.includes('सवारी')) {
+    const isShared = lower.includes('shared') || lower.includes('sumo') || lower.includes('साझा');
     return {
-      text: isShared
-        ? 'Switching to shared Sumo transport will reduce your mountain transit expenses.'
-        : 'I can re-organize your route sequence to reduce consecutive mountain driving hours.',
+      text: isShared ? t.transportShared : 'I can re-organize your route sequence to reduce consecutive mountain driving hours.',
       actionCard: {
         id: `prop_${Date.now()}_transport`,
         type: 'MUTATION_PROPOSAL',
         category: 'TRANSPORT',
-        title: isShared ? 'Switch to Shared Sumo Transport' : 'Reduce Long Driving Hours',
+        title: isShared ? t.transportCardTitle : 'Reduce Long Driving Hours',
         description: isShared
           ? 'Switches inter-city transfers to shared Sumo vehicles.'
           : 'Re-sequences itinerary stops to eliminate long continuous drives.',
@@ -92,55 +97,58 @@ function getDeterministicCopilotFallback(cleanInput, intent, context) {
         expectedImpact: isShared ? 'Lowers transportation costs by ~30%' : 'Caps daily driving time to 4 hours max where possible',
         estimatedSavings: isShared ? 'Save ~₹6,000' : null,
         refinementInstruction: isShared ? 'Change transport mode to shared sumo.' : 'Reduce driving time by optimizing route.',
-        actionLabel: isShared ? 'Switch to Shared Sumo' : 'Apply Shorter Drives'
+        actionLabel: isShared ? t.transportActionLabel : 'Apply Shorter Drives'
       },
-      sourceBadge: 'Deterministic Intelligence'
+      sourceBadge: 'Deterministic Intelligence',
+      language: lang
     };
   }
 
-  if (intentType === 'CHANGE_ACCOMMODATION' || lower.includes('homestay') || lower.includes('hotel') || lower.includes('resort')) {
-    const stayType = intent?.entities?.accommodationType || (lower.includes('homestay') ? 'homestay' : lower.includes('resort') ? 'resort' : 'hotel');
+  if (intentType === 'CHANGE_ACCOMMODATION' || lower.includes('homestay') || lower.includes('hotel') || lower.includes('resort') || lower.includes('होमस्टे')) {
+    const stayType = intent?.entities?.accommodationType || (lower.includes('homestay') || lower.includes('होमस्टे') ? 'homestay' : lower.includes('resort') ? 'resort' : 'hotel');
     return {
-      text: `I can update your stay preferences to ${stayType}s across all overnight locations.`,
+      text: stayType === 'homestay' ? t.stayHomestay : `I can update your stay preferences to ${stayType}s across all overnight locations.`,
       actionCard: {
         id: `prop_${Date.now()}_stay`,
         type: 'MUTATION_PROPOSAL',
         category: 'ACCOMMODATION',
-        title: `Switch Stay Preference to ${stayType.charAt(0).toUpperCase() + stayType.slice(1)}s`,
+        title: stayType === 'homestay' ? t.stayCardTitle : `Switch Stay Preference to ${stayType}s`,
         description: `Updates all overnight stays to authentic ${stayType}s.`,
         proposedChanges: { accommodationType: stayType },
         expectedImpact: `Overnight stays updated to ${stayType} properties`,
         estimatedSavings: stayType === 'homestay' ? 'Save ~₹4,500' : null,
         refinementInstruction: `Change accommodation preference to ${stayType}.`,
-        actionLabel: `Set Stays to ${stayType.charAt(0).toUpperCase() + stayType.slice(1)}`
+        actionLabel: stayType === 'homestay' ? t.stayActionLabel : `Set Stays to ${stayType}`
       },
-      sourceBadge: 'Deterministic Intelligence'
+      sourceBadge: 'Deterministic Intelligence',
+      language: lang
     };
   }
 
-  if (intentType === 'CHANGE_DURATION' || lower.includes('extend') || lower.includes('shorten') || lower.includes('reduce to')) {
+  if (intentType === 'CHANGE_DURATION' || lower.includes('extend') || lower.includes('shorten') || lower.includes('reduce to') || lower.includes('दिन')) {
     const targetDur = intent?.entities?.targetDuration || (intent?.entities?.durationDiff ? duration + intent.entities.durationDiff : (duration > 4 ? duration - 1 : duration + 1));
     return {
-      text: `I can adjust your trip schedule from ${duration} days to ${targetDur} days.`,
+      text: t.durationChange(duration, targetDur),
       actionCard: {
         id: `prop_${Date.now()}_duration`,
         type: 'MUTATION_PROPOSAL',
         category: 'DURATION',
-        title: `Adjust Trip Duration to ${targetDur} Days`,
+        title: t.durationCardTitle(targetDur),
         description: `Re-balances the daily itinerary across ${targetDur} days.`,
         proposedChanges: { duration: targetDur },
         expectedImpact: `Trip schedule resized to ${targetDur} days`,
         estimatedSavings: null,
         refinementInstruction: `Change trip duration to ${targetDur} days.`,
-        actionLabel: `Update to ${targetDur} Days`
+        actionLabel: t.durationActionLabel(targetDur)
       },
-      sourceBadge: 'Deterministic Intelligence'
+      sourceBadge: 'Deterministic Intelligence',
+      language: lang
     };
   }
 
   if (intentType === 'ADD_DESTINATION' || intentType === 'REMOVE_DESTINATION') {
     const isAdd = intentType === 'ADD_DESTINATION';
-    const destName = intent?.entities?.destination || (lower.includes('pelling') ? 'Pelling' : 'Lachung');
+    const destName = intent?.entities?.destination || (lower.includes('pelling') || lower.includes('पेलिंग') ? 'Pelling' : 'Lachung');
     return {
       text: isAdd
         ? `I can add ${destName} into your route circuit.`
@@ -159,62 +167,58 @@ function getDeterministicCopilotFallback(cleanInput, intent, context) {
         refinementInstruction: isAdd ? `Add ${destName} to the itinerary.` : `Remove ${destName} from the itinerary.`,
         actionLabel: isAdd ? `Add ${destName}` : `Remove ${destName}`
       },
-      sourceBadge: 'Deterministic Intelligence'
+      sourceBadge: 'Deterministic Intelligence',
+      language: lang
     };
   }
 
-  if (intentType === 'CURRENT_WEATHER' || lower.includes('weather') || lower.includes('rain')) {
+  if (intentType === 'CURRENT_WEATHER' || lower.includes('weather') || lower.includes('rain') || lower.includes('मौसम')) {
     return {
-      text: `Current weather across Sikkim mountain passes: Clear to partly cloudy in Gangtok (14°C - 20°C). North Sikkim high-altitude regions (Lachung, Yumthang) are cold (2°C - 8°C) with morning mist.`,
-      sourceBadge: 'Open-Meteo Normalizer'
+      text: t.weather,
+      sourceBadge: 'Open-Meteo Normalizer',
+      language: lang
     };
   }
 
-  if (lower.includes('permit')) {
+  if (lower.includes('permit') || lower.includes('परमिट')) {
     return {
-      text: `Travel permits (Inner Line Permits for North Sikkim / Protected Area Permits for Tsomgo & Nathula) are required for all tourists. Our registered operations team coordinates these with military and civil authorities once you submit your trip request. Permits are never pre-approved.`,
-      sourceBadge: 'Sikkim Permit Authority Guidance'
+      text: t.permits,
+      sourceBadge: 'Sikkim Permit Authority Guidance',
+      language: lang
     };
   }
 
-  if (intentType === 'PACKING_ADVICE' || lower.includes('pack') || lower.includes('clothes')) {
+  if (intentType === 'PACKING_ADVICE' || lower.includes('pack') || lower.includes('clothes') || lower.includes('कपड़े')) {
     return {
       text: `For a ${duration}-day Sikkim trip, pack layered woolens, windproof jackets, thermal inners, sturdy walking shoes, sunscreen, sunglasses, and passport-size photos with valid ID proofs for permit checkpoints.`,
-      sourceBadge: 'Himalayan Travel Advisory'
-    };
-  }
-
-  if (intentType === 'BOOK_TRIP' || lower.includes('book')) {
-    return {
-      text: `Your ${duration}-day itinerary is ready for booking review. Click below to review your traveler names and submit your request to our operations team.`,
-      actionCard: {
-        type: 'MUTATION_PROPOSAL',
-        title: 'Review Booking Request',
-        description: 'Open the booking review wizard to verify traveler details and contact options.',
-        refinementInstruction: 'LAUNCH_BOOKING_WIZARD',
-        actionLabel: 'Review Booking'
-      },
-      sourceBadge: 'Booking Assistant'
+      sourceBadge: 'Himalayan Travel Advisory',
+      language: lang
     };
   }
 
   return {
-    text: `I am your Sikkim Trip Copilot. I can help you optimize your ${duration}-day itinerary, answer road/weather questions, or suggest budget savings. How would you like to refine your trip?`,
-    sourceBadge: 'Sikkim Traveller Copilot'
+    text: t.generalFallback(duration),
+    sourceBadge: 'Sikkim Traveller Copilot',
+    language: lang
   };
 }
 
 export async function processCopilotAI({ message, intent, context }) {
   const cleanInput = sanitizeCopilotInput(message);
+  const targetLang = context?.language || detectLanguage(cleanInput) || 'en';
 
   if (!isGeminiConfigured()) {
-    return getDeterministicCopilotFallback(cleanInput, intent, context);
+    return getDeterministicCopilotFallback(cleanInput, intent, context, targetLang);
   }
 
   try {
+    const langDesc = targetLang === 'hi' ? 'Hindi (हिन्दी)' : targetLang === 'ne' ? 'Nepali (नेपाली)' : 'English';
     const systemPrompt = `You are "Sikkim Trip Copilot", an expert, friendly, and safety-conscious Himalayan travel assistant for Sikkim, India.
 The user is planning a trip with the following active context:
 ${JSON.stringify(context, null, 2)}
+
+Target language for response: ${langDesc}.
+Accurately preserve Sikkim destination names (Gangtok, Lachung, Pelling, Yumthang Valley, Gurudongmar Lake, Nathula Pass) and numeric travel constraints (e.g. ₹15,000, 4 days).
 
 STRICT SAFETY CONSTRAINTS:
 1. NEVER claim that a hotel is booked or a room is confirmed.
@@ -223,7 +227,7 @@ STRICT SAFETY CONSTRAINTS:
 4. If the user asks to modify their trip (e.g., lower budget, more relaxed, fewer drives), propose an actionCard with type "MUTATION_PROPOSAL".
 5. Return ONLY a valid JSON object matching this schema:
 {
-  "text": "Your helpful response string",
+  "text": "Your helpful response string in ${langDesc}",
   "actionCard": null or { "type": "MUTATION_PROPOSAL", "title": "...", "description": "...", "estimatedSavings": "...", "refinementInstruction": "...", "actionLabel": "..." },
   "dataCard": null or { "title": "...", "details": ["..."] },
   "sourceBadge": "AI (Gemini)"
@@ -251,10 +255,88 @@ STRICT SAFETY CONSTRAINTS:
     }
 
     parsed.sourceBadge = 'AI (Gemini)';
+    parsed.language = targetLang;
     return parsed;
   } catch (err) {
     console.warn('[CopilotAIService] Gemini call failed, using deterministic fallback:', err.message);
-    return getDeterministicCopilotFallback(cleanInput, intent, context);
+    return getDeterministicCopilotFallback(cleanInput, intent, context, targetLang);
   }
 }
+
+/**
+ * Progressive streaming Copilot response generator (SSE-compatible).
+ */
+export async function streamCopilotAI({ message, intent, context, language, onChunk, onActionCard, onDone, onError, signal }) {
+  const cleanInput = sanitizeCopilotInput(message);
+  const targetLang = language || context?.language || detectLanguage(cleanInput) || 'en';
+
+  if (!isGeminiConfigured()) {
+    const fallback = getDeterministicCopilotFallback(cleanInput, intent, context, targetLang);
+    const words = fallback.text.split(/(\s+)/);
+    for (const w of words) {
+      if (signal?.aborted) return;
+      if (onChunk) onChunk(w);
+      await new Promise((r) => setTimeout(r, 15));
+    }
+    if (fallback.actionCard && onActionCard) {
+      onActionCard(fallback.actionCard);
+    }
+    if (onDone) {
+      onDone({ sourceBadge: fallback.sourceBadge, actionCard: fallback.actionCard, language: targetLang });
+    }
+    return;
+  }
+
+  try {
+    const langDesc = targetLang === 'hi' ? 'Hindi (हिन्दी)' : targetLang === 'ne' ? 'Nepali (नेपाली)' : 'English';
+    const systemPrompt = `You are "Sikkim Trip Copilot", an expert, friendly, and safety-conscious Himalayan travel assistant for Sikkim, India.
+Target language for response: ${langDesc}.
+Accurately preserve Sikkim destination names (Gangtok, Lachung, Pelling, Yumthang, Gurudongmar, Nathula) and numerical travel values.
+STRICT SAFETY RULES:
+1. NEVER claim a room/hotel is booked.
+2. NEVER claim a permit is approved.
+3. Travel times in Sikkim are long (Gangtok to Lachung takes 6 hours).
+Respond in natural, engaging prose in ${langDesc}. Do not output JSON wrappers.`;
+
+    let actionCard = null;
+    const fullText = await streamGemini({
+      systemInstruction: systemPrompt,
+      prompt: `User message: "${cleanInput}"\nDetected intent: ${JSON.stringify(intent)}`,
+      onChunk: (chunk) => {
+        if (!signal?.aborted && onChunk) {
+          onChunk(chunk);
+        }
+      },
+      timeoutMs: 15000
+    });
+
+    // Check if user request warrants an actionCard proposal
+    const fallback = getDeterministicCopilotFallback(cleanInput, intent, context, targetLang);
+    if (fallback.actionCard && onActionCard) {
+      actionCard = fallback.actionCard;
+      onActionCard(actionCard);
+    }
+
+    if (onDone) {
+      onDone({ sourceBadge: 'AI (Gemini)', actionCard, language: targetLang, text: fullText });
+    }
+  } catch (err) {
+    if (signal?.aborted) return;
+    console.warn('[CopilotAIService] Streaming Gemini failed, falling back to deterministic stream:', err.message);
+    const fallback = getDeterministicCopilotFallback(cleanInput, intent, context, targetLang);
+    const words = fallback.text.split(/(\s+)/);
+    for (const w of words) {
+      if (signal?.aborted) return;
+      if (onChunk) onChunk(w);
+      await new Promise((r) => setTimeout(r, 15));
+    }
+    if (fallback.actionCard && onActionCard) {
+      onActionCard(fallback.actionCard);
+    }
+    if (onDone) {
+      onDone({ sourceBadge: fallback.sourceBadge, actionCard: fallback.actionCard, language: targetLang });
+    }
+  }
+}
+
 

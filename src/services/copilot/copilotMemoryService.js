@@ -28,7 +28,8 @@ export const DEFAULT_CONSTRAINTS = {
   pacePreference: null,
   preferredDestinations: [],
   excludedDestinations: [],
-  appliedRefinements: []
+  appliedRefinements: [],
+  preferredLanguage: 'en'
 };
 
 let memoryStore = {
@@ -165,6 +166,25 @@ export function updateSessionConstraints(updates = {}) {
 
   persistToStorage();
   return getSessionConstraints();
+}
+
+/**
+ * Get active user language preference ('en', 'hi', 'ne')
+ */
+export function getPreferredLanguage() {
+  if (!memoryStore.sessionId) {
+    rehydrateFromStorage();
+  }
+  return memoryStore.constraints?.preferredLanguage || 'en';
+}
+
+/**
+ * Set and persist active user language preference
+ */
+export function setPreferredLanguage(lang) {
+  if (!['en', 'hi', 'ne'].includes(lang)) return getPreferredLanguage();
+  updateSessionConstraints({ preferredLanguage: lang });
+  return lang;
 }
 
 /**

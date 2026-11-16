@@ -9,7 +9,8 @@ import { aiRateLimit } from '../middleware/security.js';
 import {
   handleGenerateItinerary,
   handleRefineItinerary,
-  handleCopilot
+  handleCopilot,
+  handleCopilotStream
 } from '../controllers/aiController.js';
 
 const router = Router();
@@ -22,6 +23,9 @@ router.post('/refine-itinerary', aiRateLimit, handleRefineItinerary);
 
 /** POST /api/copilot — Conversational Copilot assistant */
 router.post('/copilot', aiRateLimit, handleCopilot);
+
+/** POST /api/copilot/stream — Progressive SSE streaming Copilot endpoint */
+router.post('/copilot/stream', aiRateLimit, handleCopilotStream);
 
 export default router;
 

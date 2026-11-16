@@ -33,6 +33,7 @@ export function generateBackendFallbackItinerary(tripContext, regenerationPrefer
   const destNames = destinations.map(d => d.name || "Gangtok");
   const hasNorth = destinations.some(d => (d.district || "").includes("North") || ["lachung", "lachen"].includes(d.slug));
   const hasHighPass = destinations.some(d => ["tsomgo-lake", "lachung", "lachen", "nathula", "gurudongmar"].some(k => (d.slug || d.name || "").toLowerCase().includes(k)));
+  const lang = tripContext?.language || "en";
 
   const days = [];
   const totalMinCost = budget.estimatedMin || 32000;
@@ -42,28 +43,52 @@ export function generateBackendFallbackItinerary(tripContext, regenerationPrefer
 
   for (let i = 1; i <= duration; i++) {
     let baseLocation = "Gangtok";
-    let title = `Day ${i}: Arrival & Gangtok Exploration`;
+    let title = lang === "hi"
+      ? `दिन ${i}: गंगटोक भ्रमण एवं दर्शनीय स्थल`
+      : lang === "ne"
+      ? `दिन ${i}: गान्तोक भ्रमण तथा रमणीय दृश्य`
+      : `Day ${i}: Arrival & Gangtok Exploration`;
     let transit = null;
 
     if (i === 1) {
       baseLocation = "Gangtok";
-      title = "Day 1: Arrival & Acclimatization in Gangtok";
+      title = lang === "hi"
+        ? "दिन 1: गंगटोक आगमन एवं अनुकूलन"
+        : lang === "ne"
+        ? "दिन 1: गान्तोक आगमन तथा अनुकूलन"
+        : "Day 1: Arrival & Acclimatization in Gangtok";
       transit = [{ from: "Bagdogra Airport (IXB) / Siliguri", to: "Gangtok", duration: "4.5 hours", mode: "Private SUV / Cab" }];
     } else if (i === duration) {
       baseLocation = "Gangtok";
-      title = `Day ${duration}: Souvenir Shopping & Departure`;
+      title = lang === "hi"
+        ? `दिन ${duration}: स्मृति चिन्ह खरीदारी एवं प्रस्थान`
+        : lang === "ne"
+        ? `दिन ${duration}: चिनो किनमेल तथा बिदाइ`
+        : `Day ${duration}: Souvenir Shopping & Departure`;
       transit = [{ from: "Gangtok", to: "Bagdogra Airport (IXB) / NJP Railway", duration: "4.5 hours", mode: "Private SUV / Cab" }];
     } else if (hasNorth && i >= 2 && i <= 3) {
       baseLocation = "Lachung";
-      title = i === 2 ? "Day 2: Scenic Mountain Drive to North Sikkim (Lachung)" : "Day 3: Yumthang Valley & Zero Point Exploration";
+      title = lang === "hi"
+        ? (i === 2 ? "दिन 2: सुरम्य लाचुंग यात्रा एवं झरना दर्शन" : "दिन 3: युमथांग फूलों की घाटी एवं जीरो प्वाइंट")
+        : lang === "ne"
+        ? (i === 2 ? "दिन 2: रमणीय लाचुङ यात्रा तथा झरना अवलोकन" : "दिन 3: युमथाङ उपत्यका तथा जिरो पोइन्ट")
+        : (i === 2 ? "Day 2: Scenic Mountain Drive to North Sikkim (Lachung)" : "Day 3: Yumthang Valley & Zero Point Exploration");
       transit = i === 2 ? [{ from: "Gangtok", to: "Lachung", duration: "6 hours", mode: "Registered Mountain Cab" }] : null;
     } else if (destNames.some(n => n.includes("Pelling")) && i >= 3) {
       baseLocation = "Pelling";
-      title = `Day ${i}: West Sikkim Heritage & Pemayangtse Monastery`;
+      title = lang === "hi"
+        ? `दिन ${i}: पश्चिमी सिक्किम विरासत एवं पेमायांगत्से मठ`
+        : lang === "ne"
+        ? `दिन ${i}: पश्चिम सिक्किम सम्पदा तथा पेमायाङत्से गुम्बा`
+        : `Day ${i}: West Sikkim Heritage & Pemayangtse Monastery`;
       transit = [{ from: "Gangtok", to: "Pelling", duration: "4 hours", mode: "Private SUV" }];
     } else {
       baseLocation = "Gangtok";
-      title = `Day ${i}: Tsomgo Lake & Baba Mandir Excursion`;
+      title = lang === "hi"
+        ? `दिन ${i}: त्सोमगो झील एवं बाबा मंदिर दर्शन`
+        : lang === "ne"
+        ? `दिन ${i}: छोङ्गो ताल तथा बाबा मन्दिर दर्शन`
+        : `Day ${i}: Tsomgo Lake & Baba Mandir Excursion`;
       transit = [{ from: "Gangtok", to: "Tsomgo Lake", duration: "2 hours", mode: "Protected Route Cab" }];
     }
 

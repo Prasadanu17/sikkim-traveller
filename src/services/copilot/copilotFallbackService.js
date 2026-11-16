@@ -1,6 +1,7 @@
 import { executeCopilotTool } from "./copilotToolExecutor";
 import { destinations as allDests } from "../../data/destinations";
 import { buildMutationProposal } from "./copilotMutationService";
+import { getMultilingualTemplates } from "../i18n/multilingualTemplates";
 
 /**
  * Deterministic Copilot Fallback Executor.
@@ -10,6 +11,8 @@ import { buildMutationProposal } from "./copilotMutationService";
 export async function executeFallbackCopilotRequest(plannerState, intent, normalizedContext) {
   const { intent: intentType, entities } = intent;
   const currentItinerary = plannerState.itinerary?.current;
+  const lang = normalizedContext?.language || "en";
+  const t = getMultilingualTemplates(lang);
 
   // ─── ACTIONABLE MUTATION PROPOSALS (Categories A–F) ───
   if (intent.isMutating && intentType !== "BOOK_TRIP") {
@@ -161,6 +164,7 @@ export async function executeFallbackCopilotRequest(plannerState, intent, normal
 
   // DEFAULT
   return {
-    text: `I'm your Sikkim Trip Copilot! I can help you refine your ${plannerState.duration}-day trip, answer weather/permit questions, explain recommendations, or optimize costs.`
+    text: t.generalFallback(plannerState.duration || 5),
+    language: lang
   };
 }

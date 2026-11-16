@@ -10,12 +10,13 @@ import env from '../../config/env.js';
 
 let aiInstance = null;
 let mockGenerator = null;
+let mockStreamGenerator = null;
 
 /**
  * Check whether Gemini API key is configured and valid
  */
 export function isGeminiConfigured() {
-  if (mockGenerator) return true;
+  if (mockGenerator || mockStreamGenerator) return true;
   return Boolean(env.GEMINI_API_KEY && env.GEMINI_API_KEY.trim().length > 5);
 }
 
@@ -28,6 +29,17 @@ export function setMockGeminiGenerator(mockFn) {
 
 export function clearMockGeminiGenerator() {
   mockGenerator = null;
+}
+
+/**
+ * For testing: allows injection of a mock stream generator
+ */
+export function setMockGeminiStreamGenerator(mockStreamFn) {
+  mockStreamGenerator = mockStreamFn;
+}
+
+export function clearMockGeminiStreamGenerator() {
+  mockStreamGenerator = null;
 }
 
 /**
@@ -97,6 +109,49 @@ export async function callGemini({ systemInstruction, prompt, schema = null, tim
 
     const rawText = response.text || '';
     return rawText;
+  }, timeoutMs);
+}
+
+/**
+ * Streams content chunk-by-chunk using Gemini or mock stream generator
+ */
+export async function streamGemini({ systemInstruction, prompt, onChunk, timeoutMs = 20000 }) {
+  if (mockStreamGenerator) {
+    return executeGeminiWithTimeout(async () => {
+      await mockStreamGenerator({ systemInstruction, prompt, onChunk });
+    }, timeoutMs);
+  }
+
+  const ai = getGeminiClient();
+  if (!ai) {
+    throw new Error('GEMINI_NOT_CONFIGURED');
+  }
+
+  const modelName = env.GEMINI_MODEL || 'gemini-2.5-flash';
+
+  const config = {};
+  if (systemInstruction) {
+    config.systemInstruction = systemInstruction;
+  }
+
+  return executeGeminiWithTimeout(async () => {
+    const responseStream = await ai.models.generateContentStream({
+      model: modelName,
+      contents: prompt,
+      config: Object.keys(config).length > 0 ? config : undefined
+    });
+
+    let fullText = '';
+    for await (const chunk of responseStream) {
+      const text = chunk.text || '';
+      if (text) {
+        fullText += text;
+        if (onChunk) {
+          onChunk(text);
+        }
+      }
+    }
+    return fullText;
   }, timeoutMs);
 }
 
