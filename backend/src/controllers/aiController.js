@@ -96,14 +96,24 @@ export async function handleCopilotStream(req, res, next) {
     const abortController = new AbortController();
     let isClientClosed = false;
 
-    req.on('close', () => {
-      isClientClosed = true;
-      abortController.abort();
+    const onClose = () => {
+      // If the response already completed naturally (writableEnded), do not treat as an abrupt abort
+      if (!res.writableEnded) {
+        isClientClosed = true;
+        abortController.abort();
+      }
+    };
+
+    req.on('close', onClose);
+    res.on('finish', () => {
+      req.off('close', onClose);
     });
 
     const sendEvent = (eventData) => {
-      if (isClientClosed) return;
-      res.write(`data: ${JSON.stringify(eventData)}\n\n`);
+      if (isClientClosed || res.writableEnded || res.destroyed) return;
+      try {
+        res.write(`data: ${JSON.stringify(eventData)}\n\n`);
+      } catch (_) {}
     };
 
     await streamCopilotAI({
@@ -119,12 +129,20 @@ export async function handleCopilotStream(req, res, next) {
         sendEvent({ type: 'actionCard', actionCard: card });
       },
       onDone: (summary) => {
-        sendEvent({ type: 'done', ...summary });
-        res.end();
+        if (!isClientClosed && !res.writableEnded && !res.destroyed) {
+          sendEvent({ type: 'done', ...summary });
+          try {
+            res.end();
+          } catch (_) {}
+        }
       },
       onError: (err) => {
-        sendEvent({ type: 'error', message: err.message });
-        res.end();
+        if (!isClientClosed && !res.writableEnded && !res.destroyed) {
+          sendEvent({ type: 'error', message: err.message });
+          try {
+            res.end();
+          } catch (_) {}
+        }
       }
     });
   } catch (err) {

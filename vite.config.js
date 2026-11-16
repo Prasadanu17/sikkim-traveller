@@ -32,6 +32,9 @@ export default defineConfig({
             if (id.includes('lucide-react')) {
               return 'vendor-lucide';
             }
+            if (id.includes('leaflet')) {
+              return 'vendor-leaflet';
+            }
           }
         }
       }

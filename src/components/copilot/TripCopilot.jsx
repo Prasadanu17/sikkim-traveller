@@ -416,6 +416,7 @@ export default function TripCopilot({ plannerState, onRefineItinerary }) {
                     onClick={() => setShowResetConfirm(!showResetConfirm)}
                     className="p-1.5 rounded-lg text-neutral-400 hover:text-parchment hover:bg-white/10 transition"
                     title="New Conversation"
+                    aria-label="New Conversation"
                   >
                     <RotateCcw size={14} />
                   </button>
@@ -533,6 +534,7 @@ export default function TripCopilot({ plannerState, onRefineItinerary }) {
                       type="text"
                       value={inputText}
                       onChange={(e) => setInputText(e.target.value)}
+                      aria-label="Ask Trip Copilot"
                       placeholder={
                         selectedLanguage === "hi"
                           ? "मौसम, खर्च या बदलाव के बारे में पूछें..."
@@ -549,6 +551,7 @@ export default function TripCopilot({ plannerState, onRefineItinerary }) {
                       <button
                         type="button"
                         onClick={handleToggleVoiceInput}
+                        aria-label={isListening ? "Stop voice listening" : "Start voice input"}
                         className={`absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-full transition ${
                           isListening
                             ? "text-rose-600 bg-rose-100"
@@ -566,6 +569,7 @@ export default function TripCopilot({ plannerState, onRefineItinerary }) {
                     <button
                       type="button"
                       onClick={handleStopStreaming}
+                      aria-label="Stop generating response"
                       className="w-8 h-8 rounded-full bg-rose-600 text-white flex items-center justify-center transition hover:bg-rose-700 shrink-0 shadow-sm"
                       title="Stop generating response"
                     >
@@ -575,6 +579,7 @@ export default function TripCopilot({ plannerState, onRefineItinerary }) {
                     <button
                       type="submit"
                       disabled={isProcessing || !inputText.trim()}
+                      aria-label="Send message to Trip Copilot"
                       className={`w-8 h-8 rounded-full flex items-center justify-center transition shrink-0 ${
                         inputText.trim()
                           ? "bg-pine text-gold hover:bg-gold hover:text-pine shadow-sm cursor-pointer"
