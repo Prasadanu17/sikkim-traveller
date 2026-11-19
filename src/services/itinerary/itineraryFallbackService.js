@@ -198,6 +198,9 @@ export function generateFallbackItinerary(tripContext, regenerationPreference = 
       total: { min: minBase, max: maxBase }
     },
     importantNotes: [
+      ...(destinations.some((d) => d.region === "North Sikkim" || ["lachung", "lachen"].includes(d.slug)) && duration < 4
+        ? [`Feasibility Advisory: North Sikkim (Lachung/Lachen) requires at least 4 trip days due to 6+ hours of mountain road transit and permit processing. For this ${duration}-day trip, an East Sikkim circuit centered around Gangtok has been scheduled.`]
+        : []),
       "All costs are planning estimates for reference. Actual prices may vary based on availability, season, and operator rates.",
       "Protected Area Permits (PAP) are processed locally 24 hours prior to travel for North/East Sikkim routes.",
       "Weather in high mountain passes can fluctuate rapidly — flex time is built into your route."

@@ -19,9 +19,9 @@ export function errorHandler(err, req, res, next) {
     code = 'CORS_FORBIDDEN';
   }
 
-  // Log internally with full details
+  // Log internally with full details (suppress raw stack dumps in staging and production)
   console.error(`[ErrorHandler] ${req.method} ${req.path} → ${status}:`, err.message);
-  if (env.NODE_ENV !== 'production') {
+  if (env.NODE_ENV === 'development' || env.NODE_ENV === 'test') {
     console.error(err.stack);
   }
 

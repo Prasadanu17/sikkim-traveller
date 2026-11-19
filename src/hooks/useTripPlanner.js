@@ -137,12 +137,73 @@ export default function useTripPlanner() {
   });
 
   const [isCalculating, setIsCalculating] = useState(false);
+  const [hasSavedDraft, setHasSavedDraft] = useState(false);
+  const [savedDraftInfo, setSavedDraftInfo] = useState(null);
+
+  const DRAFT_KEY = "st_trip_planner_draft_v2";
+
+  // Check for saved draft on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed?.state && (parsed.currentStep > 0 || parsed.state?.itinerary?.current)) {
+          setHasSavedDraft(true);
+          setSavedDraftInfo({
+            currentStep: parsed.currentStep,
+            duration: parsed.state.duration || 5,
+            destinationCount: parsed.state.destinations?.selected?.length || 0,
+            hasItinerary: Boolean(parsed.state.itinerary?.current),
+            savedAt: parsed.savedAt || Date.now()
+          });
+        }
+      }
+    } catch (_) {
+      // Ignore storage read errors
+    }
+  }, []);
+
+  // Persist draft to localStorage when user makes progress
+  useEffect(() => {
+    if (currentStep > 0 || state.itinerary.current) {
+      try {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({
+          state,
+          currentStep,
+          savedAt: Date.now()
+        }));
+        setHasSavedDraft(true);
+      } catch (_) {
+        // Ignore quota/private mode errors
+      }
+    }
+  }, [state, currentStep]);
+
+  const resumeDraft = () => {
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.state) {
+          setState(parsed.state);
+          setCurrentStep(parsed.currentStep || (parsed.state.itinerary?.current ? 12 : 1));
+          setHasSavedDraft(false);
+        }
+      }
+    } catch (_) {}
+  };
+
+  const discardDraft = () => {
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+      setHasSavedDraft(false);
+      setSavedDraftInfo(null);
+    } catch (_) {}
+  };
 
   const markItineraryStaleIfGenerated = (prevState) => {
-    if (prevState.itinerary?.current && !prevState.itinerary.isStale) {
-      return true;
-    }
-    return false;
+    return Boolean(prevState.itinerary?.current);
   };
 
   useEffect(() => {
@@ -536,6 +597,11 @@ export default function useTripPlanner() {
         selected: initialSelected
       }
     });
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+      setHasSavedDraft(false);
+      setSavedDraftInfo(null);
+    } catch (_) {}
     setCurrentStep(0);
   };
 
@@ -867,6 +933,10 @@ export default function useTripPlanner() {
     nextStep,
     prevStep,
     resetPlanner,
-    canContinue
+    canContinue,
+    hasSavedDraft,
+    savedDraftInfo,
+    resumeDraft,
+    discardDraft
   };
 }

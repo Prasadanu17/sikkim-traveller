@@ -250,9 +250,17 @@ export const refinementChangesSchema = z.object({
 export const requestInputSchema = z.union([
   z.string().min(1, 'Refinement instruction cannot be empty').max(2000, 'Instruction too long'),
   z.object({
-    instruction: z.string().min(1, 'Refinement instruction cannot be empty').max(2000, 'Instruction too long'),
+    instruction: z.string().max(2000, 'Instruction too long').optional(),
+    mode: z.string().max(100).optional(),
     changes: refinementChangesSchema.optional(),
     proposalId: z.string().max(100).optional()
+  }).refine((data) => {
+    const hasInstruction = typeof data.instruction === 'string' && data.instruction.trim().length > 0;
+    const hasMode = typeof data.mode === 'string' && data.mode.trim().length > 0;
+    const hasChanges = Boolean(data.changes && Object.keys(data.changes).length > 0);
+    return hasInstruction || hasMode || hasChanges;
+  }, {
+    message: 'Refinement instruction cannot be empty unless mode or changes are specified'
   })
 ]);
 

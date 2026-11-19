@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Clock, Lock, ArrowLeft } from "lucide-react";
 
 const PRESETS = [
+  { label: "2 Days", value: 2 },
   { label: "3 Days", value: 3 },
   { label: "4 Days", value: 4 },
   { label: "5 Days", value: 5 },

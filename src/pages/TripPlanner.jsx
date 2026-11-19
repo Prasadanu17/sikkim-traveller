@@ -49,7 +49,11 @@ export default function TripPlanner({ onOpenBooking }) {
     nextStep,
     prevStep,
     resetPlanner,
-    canContinue
+    canContinue,
+    hasSavedDraft,
+    savedDraftInfo,
+    resumeDraft,
+    discardDraft
   } = useTripPlanner();
 
   const [isBookingOpen, setIsBookingOpen] = useState(false);
@@ -140,17 +144,54 @@ export default function TripPlanner({ onOpenBooking }) {
               <h1 className="font-display text-4xl sm:text-5xl md:text-6xl text-ink leading-tight mb-4">
                 Plan Your Sikkim Trip with AI
               </h1>
-              <p className="text-sm sm:text-base text-neutral-500 max-w-lg mx-auto leading-relaxed mb-10 font-sans">
+              <p className="text-sm sm:text-base text-neutral-500 max-w-lg mx-auto leading-relaxed mb-8 font-sans">
                 Tell us what you want to experience. We'll help you find the right time, select the perfect destinations, and build your bespoke Himalayan journey.
               </p>
-              <motion.button
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={startPlanning}
-                className="inline-flex items-center gap-2 rounded-full bg-pine text-parchment font-semibold text-sm px-10 py-4 hover:bg-gold hover:text-pine hover:shadow-gold-glow transition-all duration-300"
-              >
-                Start Planning <Sparkles size={14} className="fill-current" />
-              </motion.button>
+
+              {hasSavedDraft && savedDraftInfo ? (
+                <div className="bg-white/90 border border-gold/40 rounded-2xl p-5 mb-8 max-w-md mx-auto shadow-premium text-left">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-gold-dark bg-gold/15 px-2.5 py-0.5 rounded-full">
+                      Saved Plan Found
+                    </span>
+                    <button
+                      onClick={discardDraft}
+                      className="text-[11px] text-neutral-400 hover:text-rose-600 transition"
+                    >
+                      Discard
+                    </button>
+                  </div>
+                  <h4 className="font-display font-semibold text-ink text-sm mb-1">
+                    {savedDraftInfo.duration}-Day Trip Plan {savedDraftInfo.hasItinerary ? "• Itinerary Ready" : `• Step ${savedDraftInfo.currentStep}`}
+                  </h4>
+                  <p className="text-xs text-neutral-500 mb-4">
+                    You have an ongoing trip plan. Resume where you left off or start fresh.
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={resumeDraft}
+                      className="flex-1 py-2.5 rounded-xl bg-pine text-gold font-bold text-xs hover:bg-gold hover:text-pine transition cursor-pointer"
+                    >
+                      Resume Plan →
+                    </button>
+                    <button
+                      onClick={startPlanning}
+                      className="px-4 py-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-semibold transition cursor-pointer"
+                    >
+                      Start Fresh
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={startPlanning}
+                  className="inline-flex items-center gap-2 rounded-full bg-pine text-parchment font-semibold text-sm px-10 py-4 hover:bg-gold hover:text-pine hover:shadow-gold-glow transition-all duration-300 cursor-pointer"
+                >
+                  Start Planning <Sparkles size={14} className="fill-current" />
+                </motion.button>
+              )}
             </motion.div>
           )}
 

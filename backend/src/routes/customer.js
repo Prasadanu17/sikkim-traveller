@@ -28,6 +28,23 @@ router.post('/journeys', journeyCreateRateLimit, journeyController.createJourney
 /** POST /api/customer/verify-token — Verify journey access token */
 router.post('/verify-token', tokenVerifyRateLimit, tokenController.verifyToken);
 
+// ── TRACKING TOKEN ENDPOINTS (Customer Portal / Request ID Access) ───────────
+router.get('/booking/:trackingToken', tokenVerifyRateLimit, journeyController.getJourneyByTrackingToken);
+router.get('/bookings/:trackingToken', tokenVerifyRateLimit, journeyController.getJourneyByTrackingToken);
+router.get('/booking/:trackingToken/documents', tokenVerifyRateLimit, journeyController.getDocumentsByTrackingToken);
+router.get('/bookings/:trackingToken/documents', tokenVerifyRateLimit, journeyController.getDocumentsByTrackingToken);
+router.get('/booking/:trackingToken/messages', tokenVerifyRateLimit, journeyController.getMessagesByTrackingToken);
+router.get('/bookings/:trackingToken/messages', tokenVerifyRateLimit, journeyController.getMessagesByTrackingToken);
+router.post('/booking/:trackingToken/messages', tokenVerifyRateLimit, journeyController.sendMessageByTrackingToken);
+router.post('/bookings/:trackingToken/messages', tokenVerifyRateLimit, journeyController.sendMessageByTrackingToken);
+router.post('/booking/:trackingToken/change-request', tokenVerifyRateLimit, journeyController.submitChangeRequestByTrackingToken);
+router.post('/bookings/:trackingToken/change-request', tokenVerifyRateLimit, journeyController.submitChangeRequestByTrackingToken);
+router.post('/booking/:trackingToken/proposal/:version/approve', tokenVerifyRateLimit, journeyController.approveProposalByTrackingToken);
+router.post('/bookings/:trackingToken/proposal/:version/approve', tokenVerifyRateLimit, journeyController.approveProposalByTrackingToken);
+router.get('/booking/:trackingToken/realtime', tokenVerifyRateLimit, journeyController.getRealtimeByTrackingToken);
+router.get('/bookings/:trackingToken/realtime', tokenVerifyRateLimit, journeyController.getRealtimeByTrackingToken);
+
+
 // ── AUTHENTICATED (requires valid journey access token) ──────────────────────
 
 /** GET /api/customer/journey — Get authorized journey (IDOR: journeyId from token) */

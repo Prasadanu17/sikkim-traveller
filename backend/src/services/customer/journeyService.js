@@ -419,6 +419,61 @@ export async function getCustomerSafeJourney(journeyId) {
 
     countdownText,
     countdownDays,
-    updatedAt: raw.updatedAt.toISOString(),
+    createdAt: raw.createdAt ? (raw.createdAt instanceof Date ? raw.createdAt.toISOString() : new Date(raw.createdAt).toISOString()) : new Date().toISOString(),
+    updatedAt: raw.updatedAt ? (raw.updatedAt instanceof Date ? raw.updatedAt.toISOString() : new Date(raw.updatedAt).toISOString()) : new Date().toISOString(),
   };
 }
+
+/**
+ * Resolves an internal journey ID from either a public request ID (ST-REQ-...)
+ * or a raw access token.
+ *
+ * @param {string} tokenOrRequestId
+ * @returns {Promise<string|null>}
+ */
+export async function resolveJourneyIdByTrackingToken(tokenOrRequestId) {
+  if (!tokenOrRequestId || typeof tokenOrRequestId !== 'string') return null;
+  const clean = tokenOrRequestId.trim();
+
+  // 1. Try matching requestId (e.g. ST-REQ-...)
+  const byRequestId = await prisma.customerJourney.findUnique({
+    where: { requestId: clean },
+    select: { id: true }
+  });
+  if (byRequestId) return byRequestId.id;
+
+  // 2. Try matching by raw access token hash
+  try {
+    const { hashToken } = await import('../../security/tokenGenerator.js');
+    const tokenHash = hashToken(clean);
+    const tokenRecord = await prisma.journeyAccessToken.findUnique({
+      where: { tokenHash },
+      select: { journeyId: true, isRevoked: true, expiresAt: true }
+    });
+    if (tokenRecord && !tokenRecord.isRevoked && tokenRecord.expiresAt > new Date()) {
+      return tokenRecord.journeyId;
+    }
+  } catch {
+    // Ignore hash calculation errors on invalid strings
+  }
+
+  return null;
+}
+
+/**
+ * Resolves a customer-safe journey model from either a public request ID or raw access token.
+ *
+ * @param {string} tokenOrRequestId
+ * @returns {Promise<object|null>}
+ */
+export async function getJourneyByTrackingToken(tokenOrRequestId) {
+  const journeyId = await resolveJourneyIdByTrackingToken(tokenOrRequestId);
+  if (!journeyId) return null;
+
+  const safeModel = await getCustomerSafeJourney(journeyId);
+  if (safeModel) {
+    safeModel.trackingToken = safeModel.requestId;
+  }
+  return safeModel;
+}
+

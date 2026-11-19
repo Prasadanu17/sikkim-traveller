@@ -5,6 +5,7 @@ import env from '../src/config/env.js';
 import { generateItineraryAI } from '../src/services/ai/itineraryAIService.js';
 import { isGeminiConfigured } from '../src/services/ai/geminiClient.js';
 import { getSecureCookieOptions } from '../src/middleware/security.js';
+import { errorHandler } from '../src/middleware/errorHandler.js';
 
 describe('Phase 2 & Phase 7: Cross-Origin Security & Staging Safety Suite', () => {
   const allowedOrigin = env.CORS_ORIGIN.split(',')[0].trim();
@@ -164,6 +165,62 @@ describe('Phase 2 & Phase 7: Cross-Origin Security & Staging Safety Suite', () =
       expect(result.itinerary.days.length).toBe(4);
       expect(result.source).toBe('fallback');
       expect(result.itinerary.overview).toBeDefined();
+    });
+  });
+
+  describe('6. Staging Error Concealment & Security Mode', () => {
+    it('suppresses internal database stack traces and errors in staging identical to production', async () => {
+      const originalEnv = env.NODE_ENV;
+      env.NODE_ENV = 'staging';
+
+      const internalError = new Error('Database connection failed: FATAL at host 10.0.0.1:5432 with password secret123');
+      internalError.status = 500;
+      internalError.stack = 'Error: Database connection failed\n    at internal/db.js:42:15';
+
+      let statusCode = null;
+      let jsonResponse = null;
+      const mockReq = { method: 'POST', path: '/api/generate-itinerary' };
+      const mockRes = {
+        status: (s) => {
+          statusCode = s;
+          return mockRes;
+        },
+        json: (data) => {
+          jsonResponse = data;
+        }
+      };
+
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      errorHandler(internalError, mockReq, mockRes, vi.fn());
+
+      expect(statusCode).toBe(500);
+      expect(jsonResponse.error.message).toBe('An unexpected error occurred. Please try again.');
+      expect(jsonResponse.error.stack).toBeUndefined();
+      expect(JSON.stringify(jsonResponse)).not.toContain('secret123');
+      expect(JSON.stringify(jsonResponse)).not.toContain('10.0.0.1');
+
+      // Verify that console.error does not log the stack dump in staging
+      expect(consoleErrorSpy).not.toHaveBeenCalledWith(internalError.stack);
+
+      consoleErrorSpy.mockRestore();
+      env.NODE_ENV = originalEnv;
+    });
+
+    it('rejects development mock operations headers in staging', async () => {
+      const originalEnv = env.NODE_ENV;
+      env.NODE_ENV = 'staging';
+
+      const res = await request(app)
+        .get('/api/operations/journeys')
+        .set('x-ops-mock', 'true')
+        .set('x-ops-role', 'ADMIN');
+
+      // In staging, mock headers are ignored, and request is rejected with 401
+      expect(res.status).toBe(401);
+      expect(res.body.error.code).toBe('UNAUTHORIZED');
+
+      env.NODE_ENV = originalEnv;
     });
   });
 });

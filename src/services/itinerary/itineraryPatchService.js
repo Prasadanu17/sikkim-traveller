@@ -14,6 +14,18 @@ export function applyItineraryPatch(existingItinerary, patch) {
   if (operation === "update_day_pace" && targetDay) {
     const dayObj = cloned.days.find((d) => d.dayNumber === targetDay);
     if (dayObj) {
+      // 1a. Handle individual activity removals from DayEditModal
+      if (Array.isArray(changes.removedMorning) && changes.removedMorning.length > 0 && Array.isArray(dayObj.morning)) {
+        dayObj.morning = dayObj.morning.filter((_, idx) => !changes.removedMorning.includes(idx));
+      }
+      if (Array.isArray(changes.removedAfternoon) && changes.removedAfternoon.length > 0 && Array.isArray(dayObj.afternoon)) {
+        dayObj.afternoon = dayObj.afternoon.filter((_, idx) => !changes.removedAfternoon.includes(idx));
+      }
+      if (Array.isArray(changes.removedEvening) && changes.removedEvening.length > 0 && Array.isArray(dayObj.evening)) {
+        dayObj.evening = dayObj.evening.filter((_, idx) => !changes.removedEvening.includes(idx));
+      }
+
+      // 1b. Handle pace modifications
       if (changes.pace === "relaxed") {
         // Trim afternoon/evening activities to 1 max
         if (dayObj.afternoon && dayObj.afternoon.length > 1) {

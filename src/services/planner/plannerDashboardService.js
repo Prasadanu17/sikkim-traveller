@@ -7,14 +7,15 @@
  * Provides trip countdown calculation.
  */
 
-import { loadMockBookings } from "../operations/operationsFallbackService";
+import { loadMockBookings, saveMockBookings } from "../operations/operationsFallbackService";
 import { getBookingPermitStatus } from "../customer/customerPermitService";
 import { getCustomerChangeRequests } from "../customer/customerChangeRequestService";
 import { validateJourneyAccessToken } from "../customer/customerSecurityService";
+import { buildApiUrl } from "../../config/apiConfig";
 
 /**
  * Retrieves the single authorized customer journey for a given passwordless token.
- * Enforces single-journey data isolation.
+ * Enforces single-journey data isolation from local storage.
  */
 export function getAuthenticatedCustomerJourney(token) {
   if (!token) return { success: false, error: "Access token is required." };
@@ -33,6 +34,48 @@ export function getAuthenticatedCustomerJourney(token) {
   return {
     success: false,
     error: "Journey access could not be verified."
+  };
+}
+
+/**
+ * Asynchronously retrieves a customer journey, checking local storage first
+ * and falling back to the backend API if accessed from a new device/browser.
+ */
+export async function fetchAuthenticatedCustomerJourney(token) {
+  if (!token) return { success: false, error: "Access token is required." };
+
+  // 1. Try local storage first
+  const localRes = getAuthenticatedCustomerJourney(token);
+  if (localRes.success) return localRes;
+
+  // 2. Query backend API
+  try {
+    const cleanToken = token.trim();
+    const endpoint = buildApiUrl(`/api/customer/booking/${encodeURIComponent(cleanToken)}`);
+    const response = await fetch(endpoint, {
+      headers: { Accept: "application/json" },
+      credentials: "include"
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data && (data.requestId || data.id)) {
+        // Cache in local mock store for fast retrieval
+        const existing = loadMockBookings();
+        const foundIdx = existing.findIndex(b => (b.requestId || b.id) === (data.requestId || data.id));
+        if (foundIdx === -1) {
+          saveMockBookings([data, ...existing]);
+        }
+        return { success: true, trip: data };
+      }
+    }
+  } catch (_err) {
+    // Fall back to failure if backend unavailable
+  }
+
+  return {
+    success: false,
+    error: "No trip booking was found with this tracking link."
   };
 }
 

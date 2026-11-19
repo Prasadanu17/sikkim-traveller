@@ -4,12 +4,13 @@
  */
 
 import express from 'express';
-import { helmetMiddleware, corsMiddleware } from './middleware/security.js';
+import { helmetMiddleware, corsMiddleware, journeyCreateRateLimit } from './middleware/security.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import customerRoutes from './routes/customer.js';
 import operationsRoutes from './routes/operations.js';
 import realtimeRoutes from './routes/realtime.js';
 import aiRoutes from './routes/ai.js';
+import * as journeyController from './controllers/journeyController.js';
 import { prisma } from './config/database.js';
 
 const app = express();
@@ -44,6 +45,7 @@ app.options('*', corsMiddleware);
 
 // Mount production routes
 app.use('/api', aiRoutes);
+app.post('/api/booking-request', journeyCreateRateLimit, journeyController.createJourney);
 app.use('/api/customer', customerRoutes);
 app.use('/api/operations', operationsRoutes);
 app.use('/api/realtime', realtimeRoutes);

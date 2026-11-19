@@ -11,7 +11,12 @@
 
 import { useState, useEffect, lazy, Suspense } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { getAuthenticatedCustomerJourney, getCustomerTrips, isTripCurrentlyActive } from "../../services/planner/plannerDashboardService";
+import {
+  getAuthenticatedCustomerJourney,
+  fetchAuthenticatedCustomerJourney,
+  getCustomerTrips,
+  isTripCurrentlyActive
+} from "../../services/planner/plannerDashboardService";
 import {
   getActiveJourneySession,
   saveActiveJourneySession,
@@ -67,21 +72,24 @@ export default function TripPlannerDashboard({ onOpenBooking }) {
 
   // Validate token from URL parameter or sessionStorage on mount
   useEffect(() => {
+    let isMounted = true;
     const urlToken = searchParams.get("token");
     const activeSession = getActiveJourneySession();
 
     const targetToken = urlToken || activeSession?.token;
 
     if (targetToken) {
-      const result = getAuthenticatedCustomerJourney(targetToken);
-      if (result.success && result.trip) {
-        setAuthenticatedJourney(result.trip);
-        saveActiveJourneySession(targetToken, result.trip.requestId, result.trip.customer?.firstName);
-        setAuthError("");
-        return;
-      } else {
-        setAuthError(result.error || "Journey access could not be verified.");
-      }
+      fetchAuthenticatedCustomerJourney(targetToken).then((result) => {
+        if (!isMounted) return;
+        if (result.success && result.trip) {
+          setAuthenticatedJourney(result.trip);
+          saveActiveJourneySession(targetToken, result.trip.requestId, result.trip.customer?.firstName);
+          setAuthError("");
+        } else {
+          setAuthError(result.error || "Journey access could not be verified.");
+        }
+      });
+      return () => { isMounted = false; };
     }
 
     // Fallback: If no token in URL/session, load mock trips for multi-trip view or access card
@@ -90,11 +98,12 @@ export default function TripPlannerDashboard({ onOpenBooking }) {
     if (allTrips.length > 0) {
       setSelectedTripId(allTrips[0].id || allTrips[0].requestId);
     }
+    return () => { isMounted = false; };
   }, [searchParams]);
 
   // Handler to authenticate via access token input card
-  const handleAuthenticateToken = (inputToken) => {
-    const result = getAuthenticatedCustomerJourney(inputToken);
+  const handleAuthenticateToken = async (inputToken) => {
+    const result = await fetchAuthenticatedCustomerJourney(inputToken);
     if (result.success && result.trip) {
       setAuthenticatedJourney(result.trip);
       saveActiveJourneySession(inputToken, result.trip.requestId, result.trip.customer?.firstName);

@@ -228,15 +228,16 @@ export function prepareRouteBlueprint(tripContext) {
 
     while (dayBlueprints.length < duration) {
       const dNum = dayBlueprints.length + 1;
+      const prevLoc = dayBlueprints[dayBlueprints.length - 1]?.baseLocation || "Gangtok";
       if (dNum === duration) {
         dayBlueprints.push({
           dayNumber: dNum,
           title: "Departure & Return Journey",
           baseLocation: "Gangtok",
           overnightLocation: "Home",
-          transit: getTransitDetails("Pelling", "Gangtok"),
+          transit: getTransitDetails(prevLoc === "Pelling" ? "Pelling" : "Gangtok", prevLoc === "Pelling" ? "Gangtok" : "Airport"),
           dayType: "departure",
-          primaryActivities: ["Morning Kanchenjunga sunrise", "Airport departure transfer"],
+          primaryActivities: [prevLoc === "Pelling" ? "Morning Kanchenjunga sunrise" : "Morning local market", "Airport departure transfer"],
           isLongTravelDay: true
         });
       } else {
@@ -266,7 +267,22 @@ export function prepareRouteBlueprint(tripContext) {
     });
 
     for (let d = 2; d <= duration; d++) {
-      if (d === 2) {
+      if (d === duration) {
+        // Final day is ALWAYS departure transfer
+        const isShortTwoDay = duration === 2;
+        dayBlueprints.push({
+          dayNumber: d,
+          title: isShortTwoDay ? "Gangtok Highlights & Departure" : "Souvenir Shopping & Departure",
+          baseLocation: "Gangtok",
+          overnightLocation: "Home",
+          transit: getTransitDetails("Gangtok", "Airport"),
+          dayType: "departure",
+          primaryActivities: isShortTwoDay
+            ? ["Morning Tsomgo Lake or Rumtek Monastery excursion", "Afternoon airport departure transfer"]
+            : ["Morning view from hotel", "Airport departure transfer"],
+          isLongTravelDay: true
+        });
+      } else if (d === 2) {
         dayBlueprints.push({
           dayNumber: 2,
           title: "Excursion to Tsomgo Lake & Nathula",
@@ -276,17 +292,6 @@ export function prepareRouteBlueprint(tripContext) {
           dayType: "excursion",
           primaryActivities: ["Tsomgo Glacial Lake yak ride", "Nathula Pass border gate", "Baba Mandir"],
           isLongTravelDay: false
-        });
-      } else if (d === duration) {
-        dayBlueprints.push({
-          dayNumber: d,
-          title: "Souvenir Shopping & Departure",
-          baseLocation: "Gangtok",
-          overnightLocation: "Home",
-          transit: getTransitDetails("Gangtok", "Airport"),
-          dayType: "departure",
-          primaryActivities: ["Morning view from hotel", "Airport departure transfer"],
-          isLongTravelDay: true
         });
       } else {
         dayBlueprints.push({

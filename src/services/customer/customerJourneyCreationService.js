@@ -10,6 +10,7 @@ import { buildOperationsRecord } from "../operations/operationsContextService";
 import { loadMockBookings, saveMockBookings } from "../operations/operationsFallbackService";
 import { generateCustomerJourneyToken, saveActiveJourneySession } from "./customerSecurityService";
 import { dispatchNotificationEvent } from "../notifications/notificationOrchestrator";
+import { buildApiUrl } from "../../config/apiConfig";
 
 // Short-term in-memory idempotency cache for journey creation to prevent duplicates on double-click/retry
 const creationCache = new Map();
@@ -114,6 +115,27 @@ export function createCustomerJourney({ plannerState, travelerInfo = {}, prefere
   const existing = loadMockBookings();
   const updatedList = [record, ...existing];
   saveMockBookings(updatedList);
+
+  // Asynchronously sync to backend for database persistence when online
+  try {
+    const apiEndpoint = buildApiUrl("/api/booking-request");
+    fetch(apiEndpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Idempotency-Key": requestId
+      },
+      credentials: "include",
+      body: JSON.stringify({
+        plannerState,
+        travelerInfo: travelerObj,
+        preferences,
+        idempotencyKey: requestId
+      })
+    }).catch(() => {
+      // Backend offline or running static preview: locally stored safely
+    });
+  } catch (_) {}
 
   // Set active session in sessionStorage
   saveActiveJourneySession(accessToken, requestId, primaryName);

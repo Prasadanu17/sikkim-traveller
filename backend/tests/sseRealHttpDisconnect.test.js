@@ -132,6 +132,8 @@ describe('Real HTTP/TCP SSE Disconnection & Socket Lifecycle Suite', () => {
         }
       );
 
+      req.on('error', () => {}); // Handle expected client drop error
+
       req.write(postData);
       req.end();
     });
@@ -172,6 +174,8 @@ describe('Real HTTP/TCP SSE Disconnection & Socket Lifecycle Suite', () => {
         },
         () => {}
       );
+
+      req.on('error', () => {}); // Handle expected client drop error
 
       req.write(postData);
       req.end();

@@ -27,10 +27,13 @@ export default function TripRefinementPanel({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!inputText.trim() && !selectedChip) return;
+    const cleanText = inputText.trim();
+    if (!cleanText && !selectedChip) return;
+
+    const effectiveInstruction = cleanText || (selectedChip ? `Please adjust my itinerary to be ${selectedChip.replace(/_/g, " ")}` : "");
 
     onRefine({
-      instruction: inputText.trim(),
+      instruction: effectiveInstruction,
       mode: selectedChip
     });
 
@@ -43,8 +46,12 @@ export default function TripRefinementPanel({
     const newChip = isSelected ? null : chip.mode;
     setSelectedChip(newChip);
 
+    const cleanText = inputText.trim();
+    const chipText = newChip ? `Please make my trip ${chip.label.replace(/[^\w\s]/gi, "").trim().toLowerCase()}` : "";
+    const effectiveInstruction = cleanText || chipText;
+
     onRefine({
-      instruction: inputText.trim(),
+      instruction: effectiveInstruction,
       mode: newChip
     });
   };
