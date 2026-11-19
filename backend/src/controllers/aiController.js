@@ -43,7 +43,7 @@ export async function handleGenerateItinerary(req, res, next) {
   } catch (err) {
     if (err instanceof z.ZodError) {
       return res.status(400).json({
-        error: { code: 'INVALID_INPUT', details: err.errors.map(e => e.message) }
+        error: { code: 'INVALID_INPUT', details: (err.issues || err.errors || []).map(e => e.message) }
       });
     }
     next(err);
@@ -58,7 +58,7 @@ export async function handleRefineItinerary(req, res, next) {
   } catch (err) {
     if (err instanceof z.ZodError) {
       return res.status(400).json({
-        error: { code: 'INVALID_INPUT', details: err.errors.map(e => e.message) }
+        error: { code: 'INVALID_INPUT', details: (err.issues || err.errors || []).map(e => e.message) }
       });
     }
     next(err);
@@ -73,7 +73,7 @@ export async function handleCopilot(req, res, next) {
   } catch (err) {
     if (err instanceof z.ZodError) {
       return res.status(400).json({
-        error: { code: 'INVALID_INPUT', details: err.errors.map(e => e.message) }
+        error: { code: 'INVALID_INPUT', details: (err.issues || err.errors || []).map(e => e.message) }
       });
     }
     next(err);
@@ -97,20 +97,25 @@ export async function handleCopilotStream(req, res, next) {
     let isClientClosed = false;
 
     const onClose = () => {
-      // If the response already completed naturally (writableEnded), do not treat as an abrupt abort
-      if (!res.writableEnded) {
+      // If the response already completed naturally (writableFinished or writableEnded), do not treat as an abrupt abort
+      if (!res.writableFinished && !res.writableEnded) {
         isClientClosed = true;
         abortController.abort();
       }
     };
 
-    req.on('close', onClose);
-    res.on('finish', () => {
+    const cleanup = () => {
       req.off('close', onClose);
-    });
+      res.off('close', onClose);
+      res.off('finish', cleanup);
+    };
+
+    req.on('close', onClose);
+    res.on('close', onClose);
+    res.on('finish', cleanup);
 
     const sendEvent = (eventData) => {
-      if (isClientClosed || res.writableEnded || res.destroyed) return;
+      if (isClientClosed || res.writableEnded || res.writableFinished || res.destroyed) return;
       try {
         res.write(`data: ${JSON.stringify(eventData)}\n\n`);
       } catch (_) {}
@@ -129,7 +134,7 @@ export async function handleCopilotStream(req, res, next) {
         sendEvent({ type: 'actionCard', actionCard: card });
       },
       onDone: (summary) => {
-        if (!isClientClosed && !res.writableEnded && !res.destroyed) {
+        if (!isClientClosed && !res.writableEnded && !res.writableFinished && !res.destroyed) {
           sendEvent({ type: 'done', ...summary });
           try {
             res.end();
@@ -137,7 +142,7 @@ export async function handleCopilotStream(req, res, next) {
         }
       },
       onError: (err) => {
-        if (!isClientClosed && !res.writableEnded && !res.destroyed) {
+        if (!isClientClosed && !res.writableEnded && !res.writableFinished && !res.destroyed) {
           sendEvent({ type: 'error', message: err.message });
           try {
             res.end();
@@ -145,10 +150,12 @@ export async function handleCopilotStream(req, res, next) {
         }
       }
     });
+
+    cleanup();
   } catch (err) {
     if (err instanceof z.ZodError) {
       return res.status(400).json({
-        error: { code: 'INVALID_INPUT', details: err.errors.map(e => e.message) }
+        error: { code: 'INVALID_INPUT', details: (err.issues || err.errors || []).map(e => e.message) }
       });
     }
     next(err);
