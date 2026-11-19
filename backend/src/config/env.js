@@ -7,7 +7,7 @@
 import { z } from 'zod';
 
 const envSchema = z.object({
-  NODE_ENV:                      z.enum(['development', 'test', 'production']).default('development'),
+  NODE_ENV:                      z.enum(['development', 'test', 'staging', 'production']).default('development'),
   PORT:                          z.string().default('3001'),
   FRONTEND_URL:                  z.string().default('http://localhost:5173'),
   CORS_ORIGIN:                   z.string().default('http://localhost:5173'),
@@ -43,6 +43,15 @@ if (typeof process.loadEnvFile === 'function') {
   } catch (_) {}
 }
 
+// Pre-normalize environment variable aliases before Zod validation
+const rawEnv = {
+  ...process.env,
+  PORT: process.env.PORT || process.env.API_PORT || '3001',
+  CORS_ORIGIN: process.env.CORS_ORIGIN || process.env.CORS_ALLOWED_ORIGINS || 'http://localhost:5173',
+  CUSTOMER_TOKEN_PEPPER: process.env.CUSTOMER_TOKEN_PEPPER || process.env.CUSTOMER_TOKEN_HMAC_SECRET,
+  OPS_SESSION_SECRET: process.env.OPS_SESSION_SECRET || process.env.SESSION_SECRET
+};
+
 try {
   // If in test mode, merge defaults first so missing env vars don't throw ZodError
   if (process.env.NODE_ENV === 'test') {
@@ -51,10 +60,10 @@ try {
       CUSTOMER_TOKEN_PEPPER: 'test-pepper-64-character-length-very-long-secret-key-salt-pepper',
       OPS_SESSION_SECRET: 'test-ops-secret-64-character-length-very-long-signing-key-secret',
       RAZORPAY_WEBHOOK_SECRET: 'test-razorpay-webhook-secret-long-key',
-      ...process.env
+      ...rawEnv
     });
   } else {
-    env = envSchema.parse(process.env);
+    env = envSchema.parse(rawEnv);
   }
 } catch (err) {
   console.error('[Config] ❌ Environment validation failed:');

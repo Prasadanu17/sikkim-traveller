@@ -18,6 +18,7 @@ import { sanitizeUserInput, validateCopilotResponse } from "./copilotSafetyServi
 import { executeFallbackCopilotRequest } from "./copilotFallbackService";
 import { detectLanguage } from "../i18n/languageService";
 import { getMultilingualTemplates } from "../i18n/multilingualTemplates";
+import { API_ENDPOINTS } from "../../config/apiConfig";
 
 export async function streamCopilotMessage(
   userMessageText,
@@ -63,7 +64,7 @@ export async function streamCopilotMessage(
     addExcludedDestination(intent.entities.destinationSlug);
   }
 
-  const apiEndpoint = import.meta.env?.VITE_COPILOT_STREAM_ENDPOINT || "/api/copilot/stream";
+  const apiEndpoint = API_ENDPOINTS.COPILOT_STREAM;
 
   let fullResponseText = "";
   let receivedActionCard = null;
@@ -74,6 +75,7 @@ export async function streamCopilotMessage(
     const response = await fetch(apiEndpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({
         message: cleanInput,
         intent,

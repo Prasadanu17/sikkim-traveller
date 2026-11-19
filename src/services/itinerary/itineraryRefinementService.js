@@ -3,6 +3,7 @@ import { applyItineraryPatch } from "./itineraryPatchService";
 import { validateRefinement } from "./refinementValidationService";
 import { refineFallbackItinerary } from "./refinementFallbackService";
 import { buildTripContext } from "./tripContextService";
+import { API_ENDPOINTS } from "../../config/apiConfig";
 
 /**
  * Master Itinerary Refinement Service.
@@ -14,7 +15,7 @@ export async function refineTripItinerary(plannerState, existingItinerary, reque
   const intent = parseRefinementIntent(requestInput);
 
   // Secure API endpoint check
-  const apiEndpoint = import.meta.env?.VITE_REFINEMENT_API_ENDPOINT || "/api/refine-itinerary";
+  const apiEndpoint = API_ENDPOINTS.REFINE_ITINERARY;
 
   let updatedItinerary = null;
   let source = "fallback";
@@ -42,6 +43,7 @@ export async function refineTripItinerary(plannerState, existingItinerary, reque
       const response = await fetch(apiEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           tripContext,
           existingItinerary,

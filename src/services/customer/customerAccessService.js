@@ -8,6 +8,7 @@
 import { validateTrackingToken, sanitizeText } from "./customerPortalSanitizationService";
 import { getMockBookingByToken } from "./customerPortalFallbackService";
 import { buildCustomerSafeModel } from "./customerPortalContextService";
+import { buildApiUrl } from "../../config/apiConfig";
 
 const SESSION_KEY = "st_active_tracking_session";
 
@@ -53,11 +54,12 @@ export async function verifyTrackingAccess(trackingToken) {
 
   // Production API boundary
   try {
-    const response = await fetch(`/api/customer/booking/${encodeURIComponent(cleanToken)}`, {
+    const response = await fetch(buildApiUrl(`/api/customer/booking/${encodeURIComponent(cleanToken)}`), {
       method: "GET",
       headers: {
         "Accept": "application/json"
-      }
+      },
+      credentials: "include"
     });
 
     if (!response.ok) {

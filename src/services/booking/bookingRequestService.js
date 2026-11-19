@@ -1,3 +1,5 @@
+import { API_ENDPOINTS } from "../../config/apiConfig";
+
 /**
  * Booking Request Service.
  * Manages transmission of finalized booking payloads to the backend API,
@@ -13,7 +15,7 @@ export async function submitBookingRequest(bookingPayload, idempotencyKey) {
     throw new Error("Missing booking payload data.");
   }
 
-  const apiEndpoint = "/api/booking-request";
+  const apiEndpoint = API_ENDPOINTS.BOOKING_REQUEST;
 
   try {
     const response = await fetch(apiEndpoint, {
@@ -22,6 +24,7 @@ export async function submitBookingRequest(bookingPayload, idempotencyKey) {
         "Content-Type": "application/json",
         "X-Idempotency-Key": idempotencyKey
       },
+      credentials: "include",
       body: JSON.stringify(bookingPayload)
     });
 

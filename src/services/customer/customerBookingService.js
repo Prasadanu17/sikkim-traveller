@@ -9,6 +9,7 @@ import { verifyTrackingAccess } from "./customerAccessService";
 import { sanitizeChangeRequest, sanitizeText } from "./customerPortalSanitizationService";
 import { getMockBookingByToken, updateMockBooking } from "./customerPortalFallbackService";
 import { buildCustomerSafeModel } from "./customerPortalContextService";
+import { buildApiUrl } from "../../config/apiConfig";
 
 /**
  * Retrieves the normalized customer-safe booking model.
@@ -86,12 +87,13 @@ export async function submitChangeRequest(trackingToken, rawChangePayload) {
   }
 
   // Production API boundary
-  const response = await fetch(`/api/customer/booking/${encodeURIComponent(cleanToken)}/change-request`, {
+  const response = await fetch(buildApiUrl(`/api/customer/booking/${encodeURIComponent(cleanToken)}/change-request`), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Accept": "application/json"
     },
+    credentials: "include",
     body: JSON.stringify(sanitized)
   });
 

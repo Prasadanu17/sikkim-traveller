@@ -7,6 +7,7 @@
 
 import { sanitizeText } from "./customerPortalSanitizationService";
 import { getMockBookingByToken } from "./customerPortalFallbackService";
+import { buildApiUrl } from "../../config/apiConfig";
 
 export const DOCUMENT_CATEGORIES = [
   "Booking confirmation",
@@ -32,8 +33,9 @@ export async function getCustomerDocuments(trackingToken) {
   }
 
   // Production API boundary
-  const response = await fetch(`/api/customer/booking/${encodeURIComponent(cleanToken)}/documents`, {
-    headers: { "Accept": "application/json" }
+  const response = await fetch(buildApiUrl(`/api/customer/booking/${encodeURIComponent(cleanToken)}/documents`), {
+    headers: { "Accept": "application/json" },
+    credentials: "include"
   });
 
   if (!response.ok) {

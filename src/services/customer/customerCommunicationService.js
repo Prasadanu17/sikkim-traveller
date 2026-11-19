@@ -7,6 +7,7 @@
 import { sanitizeText } from "./customerPortalSanitizationService";
 import { getMockBookingByToken, updateMockBooking } from "./customerPortalFallbackService";
 import { buildCustomerSafeModel } from "./customerPortalContextService";
+import { buildApiUrl } from "../../config/apiConfig";
 
 /**
  * Retrieves the customer-visible message history.
@@ -22,8 +23,9 @@ export async function getCustomerMessages(trackingToken) {
   }
 
   // Production API boundary
-  const response = await fetch(`/api/customer/booking/${encodeURIComponent(cleanToken)}/messages`, {
-    headers: { "Accept": "application/json" }
+  const response = await fetch(buildApiUrl(`/api/customer/booking/${encodeURIComponent(cleanToken)}/messages`), {
+    headers: { "Accept": "application/json" },
+    credentials: "include"
   });
 
   if (!response.ok) {
@@ -85,12 +87,13 @@ export async function sendCustomerMessage(trackingToken, rawText, customerName =
   }
 
   // Production API boundary
-  const response = await fetch(`/api/customer/booking/${encodeURIComponent(cleanToken)}/messages`, {
+  const response = await fetch(buildApiUrl(`/api/customer/booking/${encodeURIComponent(cleanToken)}/messages`), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Accept": "application/json"
     },
+    credentials: "include",
     body: JSON.stringify({
       text: cleanText,
       senderName: cleanName,

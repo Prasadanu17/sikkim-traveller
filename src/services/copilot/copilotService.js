@@ -9,6 +9,7 @@ import {
 } from "./copilotMemoryService";
 import { sanitizeUserInput, validateCopilotResponse } from "./copilotSafetyService";
 import { executeFallbackCopilotRequest } from "./copilotFallbackService";
+import { API_ENDPOINTS } from "../../config/apiConfig";
 
 /**
  * Master AI Trip Copilot Orchestrator Service.
@@ -54,7 +55,7 @@ export async function processCopilotMessage(userMessageText, plannerState) {
   }
 
   // 5. Secure Backend API Proxy check or deterministic fallback execution
-  const apiEndpoint = import.meta.env?.VITE_COPILOT_API_ENDPOINT || "/api/copilot";
+  const apiEndpoint = API_ENDPOINTS.COPILOT;
 
   let responsePayload = null;
 
@@ -62,6 +63,7 @@ export async function processCopilotMessage(userMessageText, plannerState) {
     const response = await fetch(apiEndpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({
         message: cleanInput,
         intent,

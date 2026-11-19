@@ -7,33 +7,11 @@
 import { z } from 'zod';
 import { generateItineraryAI, refineItineraryAI } from '../services/ai/itineraryAIService.js';
 import { processCopilotAI, streamCopilotAI } from '../services/ai/copilotAIService.js';
-
-const generateSchema = z.object({
-  tripContext: z.record(z.any()).refine((val) => Object.keys(val).length > 0, {
-    message: 'tripContext must be a non-empty object'
-  }),
-  regenerationPreference: z.any().optional(),
-  systemInstruction: z.string().max(5000).optional(),
-  userPrompt: z.string().max(5000).optional(),
-  language: z.enum(['en', 'hi', 'ne']).optional()
-});
-
-const refineSchema = z.object({
-  tripContext: z.record(z.any()).optional(),
-  existingItinerary: z.record(z.any()).refine((val) => Object.keys(val).length > 0, {
-    message: 'existingItinerary must be a non-empty object'
-  }),
-  intent: z.record(z.any()).optional(),
-  requestInput: z.string().max(2000).optional(),
-  language: z.enum(['en', 'hi', 'ne']).optional()
-});
-
-const copilotSchema = z.object({
-  message: z.string().min(1, 'Message cannot be empty').max(1500, 'Message too long'),
-  intent: z.record(z.any()).optional(),
-  context: z.record(z.any()).optional(),
-  language: z.enum(['en', 'hi', 'ne']).optional()
-});
+import {
+  generateSchema,
+  refineSchema,
+  copilotSchema
+} from '../validation/aiSchemas.js';
 
 export async function handleGenerateItinerary(req, res, next) {
   try {
@@ -42,6 +20,7 @@ export async function handleGenerateItinerary(req, res, next) {
     return res.status(200).json(result);
   } catch (err) {
     if (err instanceof z.ZodError) {
+      console.warn('[handleGenerateItinerary] Validation failed:', JSON.stringify(err.issues || err.errors));
       return res.status(400).json({
         error: { code: 'INVALID_INPUT', details: (err.issues || err.errors || []).map(e => e.message) }
       });
@@ -57,6 +36,7 @@ export async function handleRefineItinerary(req, res, next) {
     return res.status(200).json(result);
   } catch (err) {
     if (err instanceof z.ZodError) {
+      console.warn('[handleRefineItinerary] Validation failed:', JSON.stringify(err.issues || err.errors));
       return res.status(400).json({
         error: { code: 'INVALID_INPUT', details: (err.issues || err.errors || []).map(e => e.message) }
       });

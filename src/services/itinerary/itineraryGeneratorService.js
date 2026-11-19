@@ -2,6 +2,7 @@ import { buildTripContext } from "./tripContextService";
 import { buildItineraryPrompt } from "./itineraryPromptService";
 import { validateGeneratedItinerary } from "./itineraryValidationService";
 import { generateFallbackItinerary } from "./itineraryFallbackService";
+import { API_ENDPOINTS } from "../../config/apiConfig";
 
 /**
  * Unified AI Itinerary Generator Service.
@@ -14,7 +15,7 @@ export async function generateItinerary(plannerState, regenerationPreference = n
   const tripContext = buildTripContext(plannerState);
 
   // Secure API endpoint (e.g. Serverless Function, Node backend, or Proxy)
-  const apiEndpoint = import.meta.env?.VITE_ITINERARY_API_ENDPOINT || "/api/generate-itinerary";
+  const apiEndpoint = API_ENDPOINTS.GENERATE_ITINERARY;
   const { systemInstruction, userPrompt } = buildItineraryPrompt(tripContext, regenerationPreference);
 
   try {
@@ -22,6 +23,7 @@ export async function generateItinerary(plannerState, regenerationPreference = n
     const response = await fetch(apiEndpoint, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({
         tripContext,
         regenerationPreference,

@@ -243,6 +243,9 @@ const mockPrisma = {
   $disconnect: async () => {},
   $transaction: async (callback) => {
     return callback(mockPrisma);
+  },
+  $queryRaw: async () => {
+    return [{ result: 1 }];
   }
 };
 
@@ -251,25 +254,50 @@ for (const modelName of Object.keys(store)) {
   mockPrisma[modelName] = makeModelOps(modelName);
 }
 
-// Resolve implementation
-const isTestMode = env.NODE_ENV === 'test' || env.DATABASE_URL.toLowerCase().includes('your-') || env.DATABASE_URL.toLowerCase().includes('placeholder') || env.DATABASE_URL.includes('test:test');
+// Strict Database Environment Policy
+const isPlaceholderUrl = !env.DATABASE_URL ||
+  env.DATABASE_URL.toLowerCase().includes('your-') ||
+  env.DATABASE_URL.toLowerCase().includes('placeholder') ||
+  env.DATABASE_URL.includes('test:test');
+
+const isStagingOrProd = env.NODE_ENV === 'production' || env.NODE_ENV === 'staging';
+const isTestMode = env.NODE_ENV === 'test';
 
 let activeClient;
 
-if (isTestMode) {
-  console.log('[Database] 🟢 Using In-Memory simulated Database Client.');
+if (isStagingOrProd) {
+  if (isPlaceholderUrl) {
+    throw new Error(
+      `[Database] FATAL: ${env.NODE_ENV.toUpperCase()} environment REQUIRES a valid PostgreSQL DATABASE_URL. ` +
+      `Silent in-memory mock fallback is strictly prohibited in staging/production to prevent data loss.`
+    );
+  }
+  console.log(`[Database] 🚀 Initializing production Prisma Client for ${env.NODE_ENV} environment.`);
+  activeClient = new PrismaClient({
+    log: ['error', 'warn'],
+  });
+} else if (isTestMode || isPlaceholderUrl) {
+  if (!isTestMode) {
+    console.warn(
+      '[Database] ⚠️ WARNING: Development environment using In-Memory simulated database because DATABASE_URL is placeholder/unset. ' +
+      'Data will NOT persist across server restarts. Set a valid PostgreSQL DATABASE_URL in .env to use real storage.'
+    );
+  } else {
+    console.log('[Database] 🟢 Using In-Memory simulated Database Client for test suite.');
+  }
   activeClient = mockPrisma;
 } else {
   try {
     activeClient = new PrismaClient({
-      log: env.NODE_ENV === 'development' ? ['query', 'warn', 'error'] : ['error'],
+      log: ['query', 'warn', 'error'],
     });
+    console.log('[Database] 🔌 Connected to local development PostgreSQL database.');
   } catch (err) {
-    console.warn('[Database] ⚠️ Failed to construct PrismaClient. Falling back to In-Memory simulation.', err.message);
+    console.warn('[Database] ⚠️ Failed to construct PrismaClient in development. Falling back to In-Memory simulation:', err.message);
     activeClient = mockPrisma;
   }
 }
 
 export const prisma = activeClient;
 export default prisma;
-export { store }; // Exported for inspection in tests
+export { store, mockPrisma }; // Exported for inspection in tests

@@ -163,6 +163,56 @@ describe('Module A: Backend AI Integration Suite', () => {
       expect(result.source).toBe('fallback');
       expect(result.itinerary.days.length).toBe(5);
     });
+
+    it('accepts object-format requestInput in refinement controller (Copilot mutation payload)', async () => {
+      let statusCode = null;
+      let jsonResponse = null;
+      const mockReq = {
+        body: {
+          tripContext: sampleTripContext,
+          existingItinerary: sampleValidAiItinerary,
+          intent: { intent: 'REDUCE_BUDGET' },
+          requestInput: {
+            instruction: 'Reduce budget and switch to budget stays',
+            changes: { budgetLevel: 'budget', targetMax: 25000 }
+          }
+        }
+      };
+      const mockRes = {
+        status: (s) => { statusCode = s; return mockRes; },
+        json: (data) => { jsonResponse = data; }
+      };
+
+      await handleRefineItinerary(mockReq, mockRes, vi.fn());
+
+      expect(statusCode).toBe(200);
+      expect(jsonResponse.itinerary).toBeDefined();
+      expect(jsonResponse.source).toBeDefined();
+      expect(jsonResponse.itinerary.days.length).toBe(5);
+    });
+
+    it('accepts string-format requestInput in refinement controller', async () => {
+      let statusCode = null;
+      let jsonResponse = null;
+      const mockReq = {
+        body: {
+          tripContext: sampleTripContext,
+          existingItinerary: sampleValidAiItinerary,
+          intent: { intent: 'change_day_pace' },
+          requestInput: 'Make Day 3 more relaxed with fewer visits'
+        }
+      };
+      const mockRes = {
+        status: (s) => { statusCode = s; return mockRes; },
+        json: (data) => { jsonResponse = data; }
+      };
+
+      await handleRefineItinerary(mockReq, mockRes, vi.fn());
+
+      expect(statusCode).toBe(200);
+      expect(jsonResponse.itinerary).toBeDefined();
+      expect(jsonResponse.source).toBeDefined();
+    });
   });
 
   describe('3. Copilot AI Endpoint Logic', () => {

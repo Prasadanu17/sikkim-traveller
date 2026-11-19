@@ -10,8 +10,14 @@ import env from '../config/env.js';
  * Must be registered LAST: app.use(errorHandler)
  */
 export function errorHandler(err, req, res, next) {
-  // Determine HTTP status
-  const status = err.status || err.statusCode || 500;
+  // Determine HTTP status and code
+  let status = err.status || err.statusCode || 500;
+  let code = err.code || 'SERVER_ERROR';
+
+  if (err.message && err.message.startsWith('CORS:')) {
+    status = 403;
+    code = 'CORS_FORBIDDEN';
+  }
 
   // Log internally with full details
   console.error(`[ErrorHandler] ${req.method} ${req.path} → ${status}:`, err.message);
@@ -22,7 +28,7 @@ export function errorHandler(err, req, res, next) {
   // Generic response — never expose stack traces or internal details
   const body = {
     error: {
-      code: err.code || 'SERVER_ERROR',
+      code,
       message: status < 500
         ? (err.message || 'Bad request.')
         : 'An unexpected error occurred. Please try again.'

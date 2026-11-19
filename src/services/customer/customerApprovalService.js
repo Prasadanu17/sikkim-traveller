@@ -9,6 +9,7 @@
 import { sanitizeText } from "./customerPortalSanitizationService";
 import { getMockBookingByToken, updateMockBooking } from "./customerPortalFallbackService";
 import { buildCustomerSafeModel } from "./customerPortalContextService";
+import { buildApiUrl } from "../../config/apiConfig";
 
 /**
  * Submits customer approval for a specific proposal version.
@@ -87,12 +88,13 @@ export async function approveProposal(trackingToken, proposalVersion, checklist)
   }
 
   // Production API boundary
-  const response = await fetch(`/api/customer/booking/${encodeURIComponent(cleanToken)}/proposal/${proposalVersion}/approve`, {
+  const response = await fetch(buildApiUrl(`/api/customer/booking/${encodeURIComponent(cleanToken)}/proposal/${proposalVersion}/approve`), {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Accept": "application/json"
     },
+    credentials: "include",
     body: JSON.stringify({
       customerName: cleanName,
       agreements: {

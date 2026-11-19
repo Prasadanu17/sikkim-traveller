@@ -6,6 +6,7 @@
 
 import { callGemini, isGeminiConfigured } from './geminiClient.js';
 import { generateBackendFallbackItinerary } from './itineraryFallbackService.js';
+import { existingItinerarySchema } from '../../validation/aiSchemas.js';
 
 const INJECTION_PATTERNS = [
   /ignore (all )?previous instructions/i,
@@ -29,8 +30,17 @@ function sanitizePromptInput(text) {
 
 function validateItineraryOutput(itinerary, expectedDuration) {
   if (!itinerary || typeof itinerary !== 'object') return false;
-  if (!Array.isArray(itinerary.days) || itinerary.days.length !== expectedDuration) return false;
-  if (!itinerary.overview || typeof itinerary.overview !== 'object') return false;
+
+  const parseResult = existingItinerarySchema.safeParse(itinerary);
+  if (!parseResult.success) {
+    console.warn('[ItineraryAIService] Output schema validation failed:', parseResult.error.issues);
+    return false;
+  }
+
+  if (itinerary.days.length !== expectedDuration) {
+    console.warn(`[ItineraryAIService] Output day count mismatch: expected ${expectedDuration}, got ${itinerary.days.length}`);
+    return false;
+  }
 
   // Anti-hallucination check: ensure no false claims of pre-approved permits or bookings
   const stringified = JSON.stringify(itinerary).toLowerCase();
@@ -122,7 +132,10 @@ export async function refineItineraryAI({ tripContext, existingItinerary, intent
   try {
     const langDesc = targetLang === 'hi' ? 'Hindi (हिन्दी)' : targetLang === 'ne' ? 'Nepali (नेपाली)' : 'English';
     const langNote = targetLang !== 'en' ? `\nTarget Language: Provide narrative text in ${langDesc}. Preserve structural keys in English.` : '';
-    const safeInput = sanitizePromptInput((requestInput || 'Refine itinerary pace') + (targetLang !== 'en' ? ` (Language: ${langDesc})` : ''));
+    const rawInstruction = typeof requestInput === 'object' && requestInput !== null
+      ? (requestInput.instruction || JSON.stringify(requestInput))
+      : (requestInput || 'Refine itinerary pace');
+    const safeInput = sanitizePromptInput(rawInstruction + (targetLang !== 'en' ? ` (Language: ${langDesc})` : ''));
     const systemPrompt = `You are an expert Sikkim Tourism Architect.
 Modify the following existing Sikkim itinerary according to this refinement request: "${safeInput}".
 STRICT CONSTRAINTS:

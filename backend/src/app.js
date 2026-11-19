@@ -10,6 +10,7 @@ import customerRoutes from './routes/customer.js';
 import operationsRoutes from './routes/operations.js';
 import realtimeRoutes from './routes/realtime.js';
 import aiRoutes from './routes/ai.js';
+import { prisma } from './config/database.js';
 
 const app = express();
 
@@ -39,6 +40,7 @@ app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 // Apply security headers and CORS policy
 app.use(helmetMiddleware);
 app.use(corsMiddleware);
+app.options('*', corsMiddleware);
 
 // Mount production routes
 app.use('/api', aiRoutes);
@@ -51,9 +53,27 @@ app.get('/health', (req, res) => {
   res.json({ status: 'HEALTHY', timestamp: new Date().toISOString() });
 });
 
-// Readiness probe endpoint
-app.get('/ready', (req, res) => {
-  res.json({ status: 'READY', timestamp: new Date().toISOString() });
+// Readiness probe endpoint — executes real database query
+app.get('/ready', async (req, res) => {
+  try {
+    if (typeof prisma.$queryRaw === 'function') {
+      await prisma.$queryRaw`SELECT 1`;
+    } else if (typeof prisma.$connect === 'function') {
+      await prisma.$connect();
+    }
+    res.status(200).json({
+      status: 'READY',
+      database: 'CONNECTED',
+      timestamp: new Date().toISOString()
+    });
+  } catch (err) {
+    res.status(503).json({
+      status: 'NOT_READY',
+      database: 'DISCONNECTED',
+      error: err.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Handle unknown routes

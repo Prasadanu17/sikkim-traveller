@@ -21,9 +21,10 @@ import {
 } from "./customerSecurityService";
 import { loadMockBookings } from "../operations/operationsFallbackService";
 import { buildCustomerSafeModel } from "./customerPortalContextService";
+import { API_ENDPOINTS } from "../../config/apiConfig";
 
 const IS_MOCK = import.meta.env.VITE_CUSTOMER_API_MOCK_MODE !== "false";
-const API_BASE = import.meta.env.VITE_CUSTOMER_API_BASE_URL || "/api/customer";
+const API_BASE = API_ENDPOINTS.CUSTOMER_BASE;
 
 /**
  * Helper: Returns standard auth headers for production API calls.
@@ -102,7 +103,7 @@ export async function verifyJourneyToken(token) {
       method: "POST",
       headers: authHeaders(null),
       body: JSON.stringify({ token: cleanToken }),
-      credentials: "same-origin"
+      credentials: "include"
     });
 
     if (!response.ok) {
@@ -146,7 +147,7 @@ export async function fetchCustomerJourney(token) {
     const response = await fetch(`${API_BASE}/journey`, {
       method: "GET",
       headers: authHeaders(token),
-      credentials: "same-origin"
+      credentials: "include"
     });
 
     if (!response.ok) return unauthorizedResponse();
@@ -197,7 +198,7 @@ export async function revokeCustomerSession(token) {
     await fetch(`${API_BASE}/session/revoke`, {
       method: "POST",
       headers: authHeaders(token),
-      credentials: "same-origin",
+      credentials: "include",
       body: JSON.stringify({ revokedAt: new Date().toISOString() })
     });
     return { success: true };
@@ -231,7 +232,7 @@ export async function approveProposalViaGateway(token, proposalVersion, checklis
     const response = await fetch(`${API_BASE}/proposal/approve`, {
       method: "POST",
       headers: authHeaders(token),
-      credentials: "same-origin",
+      credentials: "include",
       body: JSON.stringify({
         proposalVersion,
         agreements: checklist,
@@ -273,7 +274,7 @@ export async function submitChangeRequestViaGateway(token, { requestId, requestT
     const response = await fetch(`${API_BASE}/change-requests`, {
       method: "POST",
       headers: authHeaders(token),
-      credentials: "same-origin",
+      credentials: "include",
       body: JSON.stringify({ requestType, title, description: description.trim(), requestedDetails, customerName })
     });
 
@@ -310,7 +311,7 @@ export async function fetchCustomerDocumentsViaGateway(token, requestId) {
     const response = await fetch(`${API_BASE}/documents`, {
       method: "GET",
       headers: authHeaders(token),
-      credentials: "same-origin"
+      credentials: "include"
     });
 
     if (!response.ok) return unauthorizedResponse();

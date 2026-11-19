@@ -73,15 +73,30 @@ async function runFullStackIntegration() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        duration: 5,
-        destinations: ['gangtok', 'lachung'],
-        interests: ['mountains', 'culture'],
-        budget: { level: 'comfortable' },
-        travelers: { total: 2 }
+        tripContext: {
+          duration: 5,
+          destinations: ['gangtok', 'lachung'],
+          interests: ['mountains', 'culture'],
+          budget: { level: 'comfortable' },
+          travelers: { total: 2 }
+        }
       })
     });
     const genJson = await genRes.json();
     console.log(`  ✓ POST /api/generate-itinerary -> ${genRes.status}: Source=${genJson.source}, Days=${genJson.itinerary?.days?.length}`);
+
+    // Verify Backend Itinerary Refinement Endpoint directly over HTTP (with object requestInput)
+    const refineRes = await fetch('http://127.0.0.1:3001/api/refine-itinerary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tripContext: { duration: 5 },
+        existingItinerary: genJson.itinerary || { overview: { duration: 5 }, days: [{ dayNumber: 1, title: 'Arrival' }] },
+        requestInput: { instruction: 'Reduce budget and slow pace', changes: { budgetCap: 15000 } }
+      })
+    });
+    const refineJson = await refineRes.json();
+    console.log(`  ✓ POST /api/refine-itinerary -> ${refineRes.status}: Source=${refineJson.source}, Days=${refineJson.itinerary?.days?.length}`);
 
     // Step B: Start Frontend Server on 127.0.0.1:4173 with API Reverse Proxy
     console.log('\n▶ [2/6] Starting Frontend Reverse Proxy Server on port 4173...');
