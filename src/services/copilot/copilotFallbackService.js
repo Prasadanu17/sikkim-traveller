@@ -216,7 +216,7 @@ export async function executeFallbackCopilotRequest(plannerState, intent, normal
   if (intentType === "PERMIT_INQUIRY") {
     return {
       text: t.permits,
-      sourceBadge: { name: "Sikkim Tourism & Civil Authorities", confidence: "HIGH", url: "https://www.sikkimtourism.gov.in" },
+      sourceBadge: { name: "Sikkim Tourism & Civil Authorities", confidence: "VERIFIED", url: "https://www.sikkimtourism.gov.in" },
       language: lang
     };
   }
@@ -225,7 +225,7 @@ export async function executeFallbackCopilotRequest(plannerState, intent, normal
   if (intentType === "ALTITUDE_ADVISORY") {
     return {
       text: t.altitudeWarning,
-      sourceBadge: { name: "Himalayan Health & Acclimatization Advisory", confidence: "HIGH" },
+      sourceBadge: { name: "Himalayan Health & Acclimatization Advisory", confidence: "VERIFIED" },
       language: lang
     };
   }
@@ -234,7 +234,7 @@ export async function executeFallbackCopilotRequest(plannerState, intent, normal
   if (intentType === "FOOD_CULTURE") {
     return {
       text: t.foodCulture,
-      sourceBadge: { name: "Sikkim Cultural & Culinary Guide", confidence: "HIGH" },
+      sourceBadge: { name: "Sikkim Cultural & Culinary Guide", confidence: "CURATED" },
       language: lang
     };
   }
@@ -243,7 +243,7 @@ export async function executeFallbackCopilotRequest(plannerState, intent, normal
   if (intentType === "ITINERARY_RECOMMENDATION") {
     return {
       text: t.recommend5Day,
-      sourceBadge: { name: "Sikkim Route Specialist", confidence: "HIGH" },
+      sourceBadge: { name: "Sikkim Route Specialist", confidence: "CURATED" },
       language: lang
     };
   }

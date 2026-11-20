@@ -118,7 +118,7 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
         refinementInstruction: 'Make the trip cheaper by using shared transport and homestays.',
         actionLabel: t.budgetActionLabel
       },
-      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'HIGH' },
+      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'ESTIMATED', engine: 'Budget Model' },
       language: lang
     };
   }
@@ -139,7 +139,7 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
         refinementInstruction: `Make Day ${dayNum} more relaxed with dedicated rest time.`,
         actionLabel: t.dayActionLabel(dayNum)
       },
-      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'HIGH' },
+      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'CURATED', engine: 'Pacing Rule Engine' },
       language: lang
     };
   }
@@ -162,7 +162,7 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
         refinementInstruction: isShared ? 'Change transport mode to shared sumo.' : 'Reduce driving time by optimizing route.',
         actionLabel: isShared ? t.transportActionLabel : 'Apply Shorter Drives'
       },
-      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'HIGH' },
+      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'CURATED', engine: 'Transit Engine' },
       language: lang
     };
   }
@@ -183,7 +183,7 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
         refinementInstruction: `Change accommodation preference to ${stayType}.`,
         actionLabel: stayType === 'homestay' ? t.stayActionLabel : `Set Stays to ${stayType}`
       },
-      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'HIGH' },
+      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'CURATED', engine: 'Stay Catalog' },
       language: lang
     };
   }
@@ -204,7 +204,7 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
         refinementInstruction: `Change trip duration to ${targetDur} days.`,
         actionLabel: t.durationActionLabel(targetDur)
       },
-      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'HIGH' },
+      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'CURATED', engine: 'Duration Engine' },
       language: lang
     };
   }
@@ -225,7 +225,7 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
         refinementInstruction: `Remove one non-essential activity from Day ${dayNum}.`,
         actionLabel: t.removeActivityActionLabel(dayNum)
       },
-      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'HIGH' },
+      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'CURATED', engine: 'Schedule Engine' },
       language: lang
     };
   }
@@ -247,7 +247,7 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
         refinementInstruction: `Replace ${oldD} with ${newD} in the itinerary.`,
         actionLabel: t.replaceDestActionLabel(oldD, newD)
       },
-      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'HIGH' },
+      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'CURATED', engine: 'Route Circuit Engine' },
       language: lang
     };
   }
@@ -273,7 +273,7 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
           refinementInstruction: `Extend trip to 5 days and add ${destName}.`,
           actionLabel: t.durationActionLabel(5)
         },
-        sourceBadge: { name: 'Deterministic Intelligence', confidence: 'HIGH' },
+        sourceBadge: { name: 'Deterministic Intelligence', confidence: 'VERIFIED', engine: 'Altitude Safety Rule Base' },
         language: lang
       };
     }
@@ -296,7 +296,7 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
         refinementInstruction: isAdd ? `Add ${destName} to the itinerary.` : `Remove ${destName} from the itinerary.`,
         actionLabel: isAdd ? `Add ${destName}` : `Remove ${destName}`
       },
-      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'HIGH' },
+      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'CURATED', engine: 'Route Circuit Engine' },
       language: lang
     };
   }
@@ -304,7 +304,7 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
   if (intentType === 'PERMIT_INQUIRY' || lower.includes('permit') || lower.includes('परमिट') || lower.includes('अनुमति') || lower.includes('ilp') || lower.includes('pap')) {
     return {
       text: t.permits,
-      sourceBadge: { name: 'Sikkim Tourism & Civil Authorities', confidence: 'HIGH', url: 'https://www.sikkimtourism.gov.in' },
+      sourceBadge: { name: 'Sikkim Tourism & Civil Authorities', confidence: 'VERIFIED', url: 'https://www.sikkimtourism.gov.in' },
       language: lang
     };
   }
@@ -313,7 +313,7 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
   if (intentType === 'PACKING_ADVICE' || lower.includes('pack') || lower.includes('clothes') || lower.includes('कपड़े')) {
     return {
       text: `For a ${duration}-day Sikkim trip, pack layered woolens, windproof jackets, thermal inners, sturdy walking shoes, sunscreen, sunglasses, and passport-size photos with valid ID proofs for permit checkpoints.`,
-      sourceBadge: { name: 'Himalayan Travel Advisory', confidence: 'HIGH' },
+      sourceBadge: { name: 'Himalayan Travel Advisory', confidence: 'CURATED' },
       language: lang
     };
   }
@@ -321,7 +321,7 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
   if (intentType === 'ALTITUDE_ADVISORY' || lower.includes('ams') || lower.includes('oxygen') || lower.includes('ऊंचाई') || lower.includes('लेक लाग्ने') || (lower.includes('altitude') && !lower.includes('pack'))) {
     return {
       text: t.altitudeWarning,
-      sourceBadge: { name: 'Himalayan Health & Acclimatization Advisory', confidence: 'HIGH' },
+      sourceBadge: { name: 'Himalayan Health & Acclimatization Advisory', confidence: 'VERIFIED' },
       language: lang
     };
   }
@@ -329,7 +329,7 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
   if (intentType === 'FOOD_CULTURE' || lower.includes('food') || lower.includes('momo') || lower.includes('thukpa') || lower.includes('खाना') || lower.includes('भोजन') || lower.includes('monaster') || lower.includes('गुम्बा')) {
     return {
       text: t.foodCulture,
-      sourceBadge: { name: 'Sikkim Cultural & Culinary Guide', confidence: 'HIGH' },
+      sourceBadge: { name: 'Sikkim Cultural & Culinary Guide', confidence: 'CURATED' },
       language: lang
     };
   }
@@ -337,7 +337,7 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
   if (intentType === 'ITINERARY_RECOMMENDATION' || lower.includes('recommend') || lower.includes('suggest a trip') || lower.includes('5 day') || lower.includes('५ दिने')) {
     return {
       text: t.recommend5Day,
-      sourceBadge: { name: 'Sikkim Route Specialist', confidence: 'HIGH' },
+      sourceBadge: { name: 'Sikkim Route Specialist', confidence: 'CURATED' },
       language: lang
     };
   }
@@ -345,7 +345,7 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
   if (intentType === 'CURRENT_WEATHER' || lower.includes('weather') || lower.includes('rain') || lower.includes('मौसम')) {
     return {
       text: t.weather,
-      sourceBadge: { name: 'Open-Meteo Weather Proxy', confidence: 'HIGH', url: 'https://open-meteo.com' },
+      sourceBadge: { name: 'Open-Meteo Weather Proxy', confidence: 'VERIFIED', url: 'https://open-meteo.com' },
       language: lang
     };
   }

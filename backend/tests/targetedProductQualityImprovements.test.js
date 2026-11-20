@@ -140,7 +140,7 @@ describe('Targeted Product Quality Improvements Suite', () => {
 
       expect(typeof res.sourceBadge).toBe('object');
       expect(res.sourceBadge.name).toBe('Open-Meteo Weather Proxy');
-      expect(res.sourceBadge.confidence).toBe('HIGH');
+      expect(res.sourceBadge.confidence).toBe('VERIFIED');
       expect(res.sourceBadge.url).toBe('https://open-meteo.com');
     });
 
@@ -154,7 +154,7 @@ describe('Targeted Product Quality Improvements Suite', () => {
 
       expect(typeof res.sourceBadge).toBe('object');
       expect(res.sourceBadge.name).toBe('Sikkim Tourism & Civil Authorities');
-      expect(res.sourceBadge.confidence).toBe('HIGH');
+      expect(res.sourceBadge.confidence).toBe('VERIFIED');
       expect(res.sourceBadge.url).toBe('https://www.sikkimtourism.gov.in');
     });
   });
@@ -166,21 +166,22 @@ describe('Targeted Product Quality Improvements Suite', () => {
     it('clearly distinguishes Indian citizens from foreign nationals in English', async () => {
       const t = getMultilingualTemplates('en');
       expect(t.permits).toContain('Indian citizens require PAP');
-      expect(t.permits).toContain('Foreign nationals mandatorily require RAP');
+      expect(t.permits).toContain('Foreign nationals require an initial RAP');
+      expect(t.permits).toContain('foreign nationals ARE permitted to visit Lachung, Yumthang Valley, and Lachen');
       expect(t.permits).toContain('Nathula Pass and Gurudongmar Lake are strictly prohibited for foreign nationals');
     });
 
     it('articulates foreign-national restrictions in Hindi', async () => {
       const t = getMultilingualTemplates('hi');
       expect(t.permits).toContain('भारतीय नागरिकों को');
-      expect(t.permits).toContain('विदेशी नागरिकों को सिक्किम में प्रवेश के लिए रिस्ट्रिक्टेड एरिया परमिट (RAP/ILP)');
+      expect(t.permits).toContain('विदेशी पर्यटकों को पंजीकृत टूर ऑपरेटर के माध्यम से कम से कम 2 व्यक्तियों के समूह में लाचुंग, युमथांग घाटी और लाचेन जाने की अनुमति है');
       expect(t.permits).toContain('नाथुला दर्रा और गुरुडोंगमार झील में प्रवेश पूर्णतः प्रतिबंधित है');
     });
 
     it('articulates foreign-national restrictions in Nepali', async () => {
       const t = getMultilingualTemplates('ne');
       expect(t.permits).toContain('भारतीय नागरिकहरूलाई');
-      expect(t.permits).toContain('विदेशी नागरिकहरूलाई सिक्किम प्रवेशका लागि रेस्ट्रिक्टेड एरिया परमिट (RAP/ILP)');
+      expect(t.permits).toContain('उत्तर सिक्किममा विदेशी पर्यटकहरूलाई दर्तावाला ट्राभल एजेन्सीमार्फत कम्तीमा २ जनाको समूहमा लाचुङ, युमथाङ र लाचेन भ्रमण गर्न अनुमति दिइएको छ');
       expect(t.permits).toContain('नाथुला भञ्ज्याङ र गुरुडोङमार ताल जान पूर्ण रूपमा प्रतिबन्ध लगाइएको छ');
     });
   });
