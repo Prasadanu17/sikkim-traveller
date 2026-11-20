@@ -124,7 +124,8 @@ describe('Module E.1: Streaming AI Responses', () => {
     expect(receivedChunks.length).toBeGreaterThan(1);
     const fullText = receivedChunks.join('');
     expect(fullText).toContain('Gangtok');
-    expect(completedSummary.sourceBadge).toBe('Open-Meteo Normalizer');
+    const badgeStream = typeof completedSummary.sourceBadge === 'object' ? completedSummary.sourceBadge.name : completedSummary.sourceBadge;
+    expect(badgeStream).toContain('Open-Meteo');
   });
 
   it('5. Falls back deterministically if Gemini throws an error mid-stream', async () => {

@@ -70,7 +70,7 @@ export const destinations = [
     interests: ["mountains", "snow", "roadtrip"],
     seasons: { spring: 85, summer: 70, monsoon: 15, autumn: 90, winter: 50 },
     nearbyDestinations: ["gangtok", "tsomgo-lake"],
-    description: "The historic border trade pass between India and China, offering snow cover and dramatic high-altitude vistas.",
+    description: "The historic border trade pass between India and China, offering snow cover and dramatic high-altitude vistas. Open strictly to Indian citizens with Protected Area Permits (PAP); strictly prohibited for foreign nationals under Ministry of Home Affairs regulations.",
     highlights: ["Indo-China border gate", "Watershed war memorial", "Stunning switchback lookouts"],
     image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=700&h=500&fit=crop&q=80"
   },
@@ -146,7 +146,7 @@ export const destinations = [
     interests: ["mountains", "photography", "snow"],
     seasons: { spring: 85, summer: 65, monsoon: 10, autumn: 90, winter: 40 },
     nearbyDestinations: ["lachen"],
-    description: "One of the highest and most sacred lakes globally, surrounded by vast, cold desert plains and giant peaks.",
+    description: "One of the highest and most sacred lakes globally, surrounded by vast, cold desert plains and giant peaks. Accessible strictly to Indian citizens with Protected Area Permits; foreign nationals are strictly prohibited due to border defense sensitivities.",
     highlights: ["Holy ice-bound water details", "Stark high-altitude topography", "Border outpost scenery"],
     image: "https://images.unsplash.com/photo-1626595568864-f6551b9e11bc?w=700&h=500&fit=crop&q=80"
   },

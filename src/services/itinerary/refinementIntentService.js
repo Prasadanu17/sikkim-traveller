@@ -21,7 +21,10 @@ export function parseRefinementIntent(requestInput, options = {}) {
   };
 
   // If structured changes are explicitly passed from a mutation card
-  if (directChanges.targetDay) {
+  if (directChanges.removeActivity) {
+    intentResult.intent = "remove_activity";
+    intentResult.targetDay = directChanges.targetDay || 2;
+  } else if (directChanges.targetDay) {
     intentResult.targetDay = directChanges.targetDay;
     intentResult.intent = "change_day_pace";
   }

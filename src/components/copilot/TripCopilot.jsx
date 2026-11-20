@@ -353,7 +353,7 @@ export default function TripCopilot({ plannerState, onRefineItinerary }) {
       {/* COPILOT PANEL / DRAWER */}
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-50 flex justify-end p-0 sm:p-4 bg-pine/40 backdrop-blur-xs print:hidden">
+          <div className="fixed inset-0 z-50 flex justify-end p-0 sm:p-4 bg-pine/40 backdrop-blur-xs print:hidden overflow-hidden">
             <motion.div
               initial={{ opacity: 0, x: 50 }}
               animate={{ opacity: 1, x: 0 }}
@@ -517,6 +517,7 @@ export default function TripCopilot({ plannerState, onRefineItinerary }) {
 
                 {/* QUICK SUGGESTIONS */}
                 <CopilotQuickActions
+                  plannerState={plannerState}
                   onSelectAction={(prompt) => handleSendMessage(prompt)}
                   disabled={isProcessing || isStreaming}
                 />

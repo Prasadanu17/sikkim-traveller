@@ -33,6 +33,56 @@ export async function executeFallbackCopilotRequest(plannerState, intent, normal
     }
   }
 
+  // 1b. ACCOMMODATION SPECIFIC LOOKUP
+  if (intentType === "ACCOMMODATION_LOOKUP") {
+    const days = currentItinerary?.days || [];
+    const hasItinerary = days.length > 0;
+    const requestedDay = entities?.dayNumber || 1;
+
+    if (!hasItinerary) {
+      return {
+        text: "You haven't generated an itinerary yet, so accommodations haven't been assigned. Please create or generate your itinerary first!",
+        sourceBadge: { name: "Itinerary Engine", confidence: "HIGH" },
+        language: lang
+      };
+    }
+
+    if (requestedDay < 1 || requestedDay > days.length) {
+      return {
+        text: `Your current trip has ${days.length} days. Please specify a valid day number between 1 and ${days.length}.`,
+        sourceBadge: { name: "Itinerary Engine", confidence: "HIGH" },
+        language: lang
+      };
+    }
+
+    const daySchedule = days[requestedDay - 1];
+    const stayObj = daySchedule?.stay;
+    const stayName = typeof stayObj === "string" ? stayObj : stayObj?.name;
+    const stayLoc = stayObj?.location || daySchedule?.baseLocation || daySchedule?.overnightLocation;
+
+    if (stayName) {
+      return {
+        text: `On Day ${requestedDay}, your stay is scheduled at ${stayName}${stayLoc ? ` in ${stayLoc}` : ""}.`,
+        dataCard: {
+          title: `Day ${requestedDay} Accommodation`,
+          details: [
+            `Property: ${stayName}`,
+            `Location: ${stayLoc || "Sikkim"}`,
+            `Type: ${stayObj?.type || "Hotel / Homestay"}`
+          ]
+        },
+        sourceBadge: { name: "Itinerary Stays Master", confidence: "HIGH" },
+        language: lang
+      };
+    }
+
+    return {
+      text: `For Day ${requestedDay}${stayLoc ? ` in ${stayLoc}` : ""}, specific accommodation has not been selected yet. You can choose a homestay, hotel, or resort in the Stay step!`,
+      sourceBadge: { name: "Itinerary Engine", confidence: "HIGH" },
+      language: lang
+    };
+  }
+
   // 2. EXPLAIN DESTINATION ("Why Lachung?")
   if (intentType === "EXPLAIN_DESTINATION") {
     const destName = entities.destination || "Lachung";
@@ -162,9 +212,46 @@ export async function executeFallbackCopilotRequest(plannerState, intent, normal
     };
   }
 
+  // 8. PERMITS
+  if (intentType === "PERMIT_INQUIRY") {
+    return {
+      text: t.permits,
+      sourceBadge: { name: "Sikkim Tourism & Civil Authorities", confidence: "HIGH", url: "https://www.sikkimtourism.gov.in" },
+      language: lang
+    };
+  }
+
+  // 9. ALTITUDE & ACCLIMATIZATION
+  if (intentType === "ALTITUDE_ADVISORY") {
+    return {
+      text: t.altitudeWarning,
+      sourceBadge: { name: "Himalayan Health & Acclimatization Advisory", confidence: "HIGH" },
+      language: lang
+    };
+  }
+
+  // 10. FOOD & CULTURE
+  if (intentType === "FOOD_CULTURE") {
+    return {
+      text: t.foodCulture,
+      sourceBadge: { name: "Sikkim Cultural & Culinary Guide", confidence: "HIGH" },
+      language: lang
+    };
+  }
+
+  // 11. ITINERARY RECOMMENDATION
+  if (intentType === "ITINERARY_RECOMMENDATION") {
+    return {
+      text: t.recommend5Day,
+      sourceBadge: { name: "Sikkim Route Specialist", confidence: "HIGH" },
+      language: lang
+    };
+  }
+
   // DEFAULT
   return {
     text: t.generalFallback(plannerState.duration || 5),
+    sourceBadge: { name: "Sikkim Traveller Copilot", confidence: "HIGH" },
     language: lang
   };
 }

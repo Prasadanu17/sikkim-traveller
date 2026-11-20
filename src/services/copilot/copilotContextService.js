@@ -38,7 +38,17 @@ export function buildCopilotContext(plannerState, activeConstraints = {}) {
     travelStyle: currentItinerary.overview?.travelStyle || travelStyle,
     daysCount: currentItinerary.days?.length || 0,
     route: currentItinerary.overview?.route || [],
-    estimatedCost: currentItinerary.overview?.estimatedCost || null
+    estimatedCost: currentItinerary.overview?.estimatedCost || null,
+    days: (currentItinerary.days || []).map((d) => ({
+      dayNumber: d.dayNumber,
+      title: d.title,
+      baseLocation: d.baseLocation,
+      morning: (d.morning || []).map((a) => (typeof a === "string" ? a : a.title)),
+      afternoon: (d.afternoon || []).map((a) => (typeof a === "string" ? a : a.title)),
+      evening: (d.evening || []).map((a) => (typeof a === "string" ? a : a.title)),
+      transit: d.travel ? d.travel.map((t) => `${t.from} -> ${t.to} (${t.duration || t.hours || ""})`).join(", ") : null,
+      stay: d.overnight?.accommodationType || d.overnight?.location || null
+    }))
   } : null;
 
   const realtimeSummary = realtimeIntelligence.impact ? {
@@ -50,6 +60,7 @@ export function buildCopilotContext(plannerState, activeConstraints = {}) {
   } : null;
 
   return {
+    duration,
     trip: {
       duration,
       travelStyle,

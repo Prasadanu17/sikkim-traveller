@@ -17,6 +17,16 @@ export const MULTILINGUAL_TEMPLATES = {
     dayCardDesc: (dayNum) => `Lightens Day ${dayNum} activity density to allow restful exploration and leisure.`,
     dayActionLabel: (dayNum) => `Relax Day ${dayNum}`,
 
+    removeActivity: (dayNum) => `I can remove one activity from Day ${dayNum} to give you more breathing room and rest.`,
+    removeActivityCardTitle: (dayNum) => `Remove Activity from Day ${dayNum}`,
+    removeActivityCardDesc: (dayNum) => `Removes the densest non-essential activity from Day ${dayNum} for a lighter schedule.`,
+    removeActivityActionLabel: (dayNum) => `Lighten Day ${dayNum}`,
+
+    replaceDest: (oldD, newD) => `I can replace ${oldD} with ${newD} and optimize your driving routes accordingly.`,
+    replaceDestCardTitle: (oldD, newD) => `Replace ${oldD} with ${newD}`,
+    replaceDestCardDesc: (oldD, newD) => `Updates your route circuit from ${oldD} to ${newD} and balances daily travel times.`,
+    replaceDestActionLabel: (oldD, newD) => `Swap to ${newD}`,
+
     transportShared: 'Switching to shared Sumo transport will reduce your mountain transit expenses.',
     transportCardTitle: 'Switch to Shared Sumo Transport',
     transportActionLabel: 'Switch to Shared Sumo',
@@ -30,8 +40,11 @@ export const MULTILINGUAL_TEMPLATES = {
     durationActionLabel: (toDays) => `Update to ${toDays} Days`,
 
     weather: 'Current weather across Sikkim mountain passes: Clear to partly cloudy in Gangtok (14°C - 20°C). North Sikkim high-altitude regions (Lachung, Yumthang) are cold (2°C - 8°C) with morning mist.',
-    permits: 'Travel permits (Inner Line Permits for North Sikkim / Protected Area Permits for Tsomgo & Nathula) are required for all tourists. Our registered operations team coordinates these with military and civil authorities once you submit your trip request. Permits are never pre-approved.',
+    permits: 'Travel permits: Inner Line Permits / Restricted Area Permits (RAP/ILP) and Protected Area Permits (PAP) are required for travel in Sikkim. Indian citizens require PAP for Tsomgo Lake, Nathula Pass, and North Sikkim. Foreign nationals mandatorily require RAP to enter Sikkim, and PAP for authorized areas like Yumthang. NOTE: Nathula Pass and Gurudongmar Lake are strictly prohibited for foreign nationals under Ministry of Home Affairs border regulations. Permits are never pre-approved.',
     altitudeWarning: 'Acclimatization reminder: Stay hydrated, avoid rapid climbing without night rest in Lachen/Lachung, and descend immediately if acute headache develops.',
+    foodCulture: 'Sikkimese cuisine offers rich Himalayan flavors: steamed beef/pork or vegetable momos, warm thukpa, fermented gundruk soup, kinema, and chhurpi soup. For cultural heritage, explore Rumtek and Pemayangtse monasteries.',
+    recommend5Day: 'For a classic 5-day Sikkim circuit, I recommend: Day 1 Arrival & Gangtok MG Marg, Day 2 Tsomgo Lake & Baba Mandir, Day 3 Scenic drive to Pelling via Ravangla Buddha Park, Day 4 Pemayangtse Monastery & Skywalk, Day 5 Departure via Bagdogra/NJP.',
+    northSikkimDurationNotice: (currentDur) => `Visiting North Sikkim (Lachung/Lachen/Yumthang) requires at least 4 full days due to the 6+ hour mountain road each way. With your current ${currentDur}-day plan, extending to 5 days is recommended for altitude safety.`,
     generalFallback: (duration) => `I am your Sikkim Trip Copilot. I can help you optimize your ${duration}-day itinerary, answer road/weather questions, or suggest budget savings. How would you like to refine your trip?`
   },
 
@@ -47,6 +60,16 @@ export const MULTILINGUAL_TEMPLATES = {
     dayCardDesc: (dayNum) => `दिन ${dayNum} की गतिविधियों को हल्का करता है ताकि आप सुकून से घूम सकें।`,
     dayActionLabel: (dayNum) => `दिन ${dayNum} को रिलैक्स करें`,
 
+    removeActivity: (dayNum) => `मैं दिन ${dayNum} से एक गतिविधि हटा सकता हूँ ताकि आपको पर्याप्त आराम मिल सके।`,
+    removeActivityCardTitle: (dayNum) => `दिन ${dayNum} से गतिविधि हटाएं`,
+    removeActivityCardDesc: (dayNum) => `दिन ${dayNum} से अतिरिक्त गतिविधि हटाकर कार्यक्रम को हल्का बनाएं।`,
+    removeActivityActionLabel: (dayNum) => `दिन ${dayNum} हल्का करें`,
+
+    replaceDest: (oldD, newD) => `मैं ${oldD} की जगह ${newD} जोड़ सकता हूँ और मार्ग को पुनर्गठित कर सकता हूँ।`,
+    replaceDestCardTitle: (oldD, newD) => `${oldD} को ${newD} से बदलें`,
+    replaceDestCardDesc: (oldD, newD) => `आपके यात्रा मार्ग को ${oldD} से ${newD} में बदलकर समय संतुलित करता है।`,
+    replaceDestActionLabel: (oldD, newD) => `${newD} पर स्विच करें`,
+
     transportShared: 'शेयर्ड सूमो परिवहन चुनने से आपका पहाड़ी यात्रा खर्च काफी कम हो जाएगा।',
     transportCardTitle: 'शेयर्ड सूमो परिवहन चुनें',
     transportActionLabel: 'शेयर्ड सूमो पर स्विच करें',
@@ -60,8 +83,11 @@ export const MULTILINGUAL_TEMPLATES = {
     durationActionLabel: (toDays) => `${toDays} दिन अपडेट करें`,
 
     weather: 'सिक्किम के पहाड़ी मार्गों पर वर्तमान मौसम: गंगटोक में साफ से आंशिक बादल (14°C - 20°C)। उत्तरी सिक्किम (लाचुंग, युमथांग) में ठंड (2°C - 8°C) और सुबह हल्का कोहरा है।',
-    permits: 'पर्यटकों के लिए इनर लाइन परमिट (उत्तरी सिक्किम) और प्रोटेक्टेड एरिया परमिट (त्सोमगो और नाथुला) अनिवार्य हैं। आपकी बुकिंग के बाद हमारी टीम सेना और प्रशासन के साथ समन्वय करके परमिट प्रक्रिया पूरा करती है। परमिट पहले से स्वीकृत नहीं होते।',
+    permits: 'यात्रा परमिट: भारतीय नागरिकों को त्सोमगो झील, नाथुला दर्रा और उत्तरी सिक्किम (लाचुंग, लाचेन, युमथांग, गुरुडोंगमार) के लिए प्रोटेक्टेड एरिया परमिट (PAP) आवश्यक है। विदेशी नागरिकों को सिक्किम में प्रवेश के लिए रिस्ट्रिक्टेड एरिया परमिट (RAP/ILP) तथा युमथांग व त्सोमगो जैसे क्षेत्रों के लिए पंजीकृत टूर ऑपरेटर के माध्यम से विशेष परमिट आवश्यक है। ध्यान दें: गृह मंत्रालय के सीमा नियमों के तहत विदेशी नागरिकों के लिए नाथुला दर्रा और गुरुडोंगमार झील में प्रवेश पूर्णतः प्रतिबंधित है।',
     altitudeWarning: 'ऊंचाई पर अनुकूलन सलाह: पर्याप्त पानी पिएं, लाचेन/लाचुंग में रात रुकने के बिना सीधे ऊंचाई पर न जाएं, और सिरदर्द होने पर तुरंत नीचे आएं।',
+    foodCulture: 'सिक्किमी भोजन में मोमो, गरमा-गरम थुकपा, गुन्द्रुक सूप, किनेमा और छुरपी शामिल हैं। सांस्कृतिक दर्शन के लिए रुमटेक और पेमायांगत्से मठ अवश्य देखें।',
+    recommend5Day: 'सिक्किम के लिए 5-दिवसीय आदर्श यात्रा कार्यक्रम: दिन 1 गंगटोक आगमन व एमजी मार्ग, दिन 2 त्सोमगो झील व बाबा मंदिर, दिन 3 पेलिंग यात्रा (रवांगला बुद्ध पार्क होते हुए), दिन 4 पेमायांगत्से मठ व स्काईवॉक, दिन 5 प्रस्थान।',
+    northSikkimDurationNotice: (currentDur) => `उत्तरी सिक्किम (लाचुंग/लाचेन/युमथांग) जाने के लिए कम से कम 4 दिन आवश्यक हैं क्योंकि सड़क यात्रा में 6 घंटे लगते हैं। आपकी ${currentDur}-दिनों की योजना में 1 दिन जोड़ना सुरक्षित रहेगा।`,
     generalFallback: (duration) => `मैं आपका सिक्किम ट्रिप कोपायलट हूँ। मैं आपकी ${duration}-दिनों की यात्रा को बेहतर बनाने, मौसम व सड़क की जानकारी देने और बजट बचाने में मदद कर सकता हूँ।`
   },
 
@@ -77,6 +103,16 @@ export const MULTILINGUAL_TEMPLATES = {
     dayCardDesc: (dayNum) => `दिन ${dayNum} को व्यस्तता घटाएर आरामसँग घुम्ने अवसर प्रदान गर्दछ।`,
     dayActionLabel: (dayNum) => `दिन ${dayNum} आरामदायी बनाउनुहोस्`,
 
+    removeActivity: (dayNum) => `म दिन ${dayNum} बाट एउटा क्रियाकलाप हटाउन सक्छु ताकि तपाईंले पर्याप्त आराम पाउन सक्नुहोस्।`,
+    removeActivityCardTitle: (dayNum) => `दिन ${dayNum} बाट गतिविधि हटाउनुहोस्`,
+    removeActivityCardDesc: (dayNum) => `दिन ${dayNum} को तालिकालाई हल्का बनाउन अतिरिक्त गतिविधि हटाउँछ।`,
+    removeActivityActionLabel: (dayNum) => `दिन ${dayNum} हल्का बनाउनुहोस्`,
+
+    replaceDest: (oldD, newD) => `म ${oldD} को सट्टा ${newD} राखेर तपाईंको यात्रा मार्ग समायोजन गर्न सक्छु।`,
+    replaceDestCardTitle: (oldD, newD) => `${oldD} लाई ${newD} सँग बदल्नुहोस्`,
+    replaceDestCardDesc: (oldD, newD) => `तपाईंको भ्रमण मार्ग ${oldD} बाट ${newD} मा सारेर दैनिक यात्रा समय सन्तुलन गर्दछ।`,
+    replaceDestActionLabel: (oldD, newD) => `${newD} मा सर्नुहोस्`,
+
     transportShared: 'साझा सुमो रोज्नुभएमा तपाईंको पहाडी यातायात खर्च उल्लेख्य रूपमा घट्नेछ।',
     transportCardTitle: 'साझा सुमो यातायात रोज्नुहोस्',
     transportActionLabel: 'साझा सुमोमा सर्नुहोस्',
@@ -90,8 +126,11 @@ export const MULTILINGUAL_TEMPLATES = {
     durationActionLabel: (toDays) => `${toDays} दिन अपडेट गर्नुहोस्`,
 
     weather: 'सिक्किमका पहाडी सडकहरूमा वर्तमान मौसम: गान्तोकमा सफा तथा आंशिक बदली (14°C - 20°C)। उत्तर सिक्किमका उच्च भूभाग (लाचुङ, युमथाङ) मा जाडो (2°C - 8°C) र बिहानी कुहिरो छ।',
-    permits: 'पर्यटकहरूका लागि इनर लाइन परमिट (उत्तर सिक्किम) र संरक्षित क्षेत्र परमिट (छोङ्गो ताल तथा नाथुला) अनिवार्य छ। हाम्रो टोलीले सुरक्षा निकाय र प्रशासनसँग समन्वय गरी परमिट प्रक्रिया अघि बढाउँछ। परमिट पहिले नै स्वीकृत हुँदैन।',
+    permits: 'यात्रा परमिट: भारतीय नागरिकहरूलाई छोङ्गो ताल, नाथुला भञ्ज्याङ र उत्तर सिक्किम (लाचुङ, लाचेन, युमथाङ, गुरुडोङमार) का लागि प्रोटेक्टेड एरिया परमिट (PAP) अनिवार्य छ। विदेशी नागरिकहरूलाई सिक्किम प्रवेशका लागि रेस्ट्रिक्टेड एरिया परमिट (RAP/ILP) र खुला गरिएका क्षेत्रहरू (युमथाङ, छोङ्गो) का लागि दर्तावाला ट्राभल एजेन्सीमार्फत विशेष अनुमति चाहिन्छ। विशेष सूचना: गृह मन्त्रालयको सीमा सुरक्षा नियम अनुसार विदेशी नागरिकहरूलाई नाथुला भञ्ज्याङ र गुरुडोङमार ताल जान पूर्ण रूपमा प्रतिबन्ध लगाइएको छ।',
     altitudeWarning: 'लेक लाग्ने (AMS) सचेतना: प्रशस्त पानी पिउनुहोस्, लाचेन/लाचुङमा बास नबसी सिधै उच्च भागमा नउक्लनुहोस्, र टाउको दुखेमा तुरुन्त ओर्लनुहोस्।',
+    foodCulture: 'सिक्किमी परिकारमा मोमो, थुक्पा, गुन्द्रुकको झोल, किनेमा र छुर्पी प्रसिद्ध छन्। ऐतिहासिक संस्कृतिका लागि रुम्तेक र पेमायाङत्से गुम्बा अवलोकन गर्नुहोस्।',
+    recommend5Day: 'सिक्किमको उत्कृष्ट ५-दिने भ्रमण तालिका: दिन १ गान्तोक आगमन र एमजी मार्ग, दिन २ छोङ्गो ताल र बाबा मन्दिर, दिन ३ पेलिङ प्रस्थान (रवाङ्ला बुद्ध पार्क हुँदै), दिन ४ पेमायाङत्से गुम्बा र स्काइवाक, दिन ५ फिर्ती।',
+    northSikkimDurationNotice: (currentDur) => `उत्तर सिक्किम (लाचुङ/लाचेन/युमथाङ) जान कम्तीमा ४ दिन चाहिन्छ किनकि सडक यात्रा ६ घण्टाभन्दा लामो हुन्छ। तपाईंको ${currentDur}-दिने तालिकामा १ दिन थप्नु उपयुक्त हुनेछ।`,
     generalFallback: (duration) => `म तपाईंको सिक्किम भ्रमण कोपाइलट हुँ। म तपाईंको ${duration}-दिने यात्रालाई परिष्कृत गर्न, मौसम/सडक जानकारी दिन र बजेट घटाउन मद्दत गर्न सक्छु।`
   }
 };

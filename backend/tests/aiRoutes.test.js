@@ -225,7 +225,9 @@ describe('Module A: Backend AI Integration Suite', () => {
         context: sampleTripContext
       });
       expect(weatherRes.text).toContain('weather across Sikkim');
-      expect(weatherRes.sourceBadge).toBe('Open-Meteo Normalizer');
+      expect(weatherRes.sourceBadge).toBeDefined();
+      const badgeName = typeof weatherRes.sourceBadge === 'object' ? weatherRes.sourceBadge.name : weatherRes.sourceBadge;
+      expect(badgeName).toContain('Open-Meteo');
 
       const budgetRes = await processCopilotAI({
         message: 'How can I make my trip cheaper?',

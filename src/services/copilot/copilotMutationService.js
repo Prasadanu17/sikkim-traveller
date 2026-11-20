@@ -257,6 +257,84 @@ export function buildMutationProposal({ intent, plannerState }) {
     return { validation, proposal };
   }
 
+  // 7. REMOVE ACTIVITY
+  if (intentType === "REMOVE_ACTIVITY") {
+    const targetDay = entities.dayNumber || 2;
+    const changes = {
+      targetDay,
+      removeActivity: true
+    };
+
+    const validation = validateMutationProposal({
+      category: "ACTIVITY_REMOVAL",
+      changes,
+      plannerState
+    });
+
+    if (!validation.isValid) {
+      return { validation, proposal: null };
+    }
+
+    const proposal = {
+      id: generateProposalId(),
+      type: "MUTATION_PROPOSAL",
+      category: "ACTIVITY_REMOVAL",
+      title: `Remove Activity from Day ${targetDay}`,
+      description: `Removes the non-essential activity from Day ${targetDay} to reduce rush and provide more rest time.`,
+      proposedChanges: changes,
+      expectedImpact: `Lightens Day ${targetDay} schedule for leisurely exploration`,
+      estimatedSavings: null,
+      refinementInstruction: `Remove one non-essential activity from Day ${targetDay}.`,
+      actionLabel: `Lighten Day ${targetDay}`,
+      status: "pending",
+      createdAt: new Date().toISOString()
+    };
+
+    return { validation, proposal };
+  }
+
+  // 8. REPLACE DESTINATION
+  if (intentType === "REPLACE_DESTINATION") {
+    const oldSlug = entities.oldDestination || "pelling";
+    const newSlug = entities.newDestination || "ravangla";
+    const oldObj = allDests.find((d) => d.slug === oldSlug) || { name: oldSlug };
+    const newObj = allDests.find((d) => d.slug === newSlug) || { name: newSlug };
+
+    const changes = {
+      replaceDestination: {
+        oldDestination: oldSlug,
+        newDestination: newSlug
+      }
+    };
+
+    const validation = validateMutationProposal({
+      category: "DESTINATION_REPLACE",
+      changes,
+      plannerState
+    });
+
+    if (!validation.isValid) {
+      return { validation, proposal: null };
+    }
+
+    const proposal = {
+      id: generateProposalId(),
+      type: "MUTATION_PROPOSAL",
+      category: "DESTINATION_REPLACE",
+      title: `Replace ${oldObj.name} with ${newObj.name}`,
+      description: `Updates your route circuit from ${oldObj.name} to ${newObj.name} and balances daily mountain driving times.`,
+      proposedChanges: changes,
+      expectedImpact: `Route modified to include ${newObj.name} instead of ${oldObj.name}`,
+      estimatedSavings: null,
+      refinementInstruction: `Replace ${oldObj.name} with ${newObj.name} in the itinerary.`,
+      actionLabel: `Swap to ${newObj.name}`,
+      status: "pending",
+      createdAt: new Date().toISOString()
+    };
+
+    return { validation, proposal };
+  }
+
   return { validation: { isValid: true, errors: [], warnings: [] }, proposal: null };
 }
 

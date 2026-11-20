@@ -84,11 +84,26 @@ export function validateMutationProposal({ category, changes, plannerState }) {
     }
   }
 
-  // 4. DAY PACING VALIDATION
-  if (category === "DAY_PACE" || changes.targetDay) {
+  // 4. DAY PACING & ACTIVITY REMOVAL VALIDATION
+  if (category === "DAY_PACE" || category === "ACTIVITY_REMOVAL" || changes.targetDay) {
     const targetDay = Number(changes.targetDay);
     if (targetDay && (targetDay < 1 || targetDay > currentDuration)) {
       errors.push(`Target Day ${targetDay} is outside your ${currentDuration}-day trip schedule.`);
+    }
+  }
+
+  // 5. DESTINATION REPLACE VALIDATION
+  if (category === "DESTINATION_REPLACE" || changes.replaceDestination) {
+    const oldSlug = (changes.replaceDestination?.oldDestination || "").toLowerCase();
+    const newSlug = (changes.replaceDestination?.newDestination || "").toLowerCase();
+    const newFound = allDests.find((d) => d.slug === newSlug || d.name.toLowerCase() === newSlug);
+
+    if (!newFound) {
+      errors.push(`Destination "${newSlug}" is not a recognized Sikkim destination.`);
+    } else {
+      if ((newSlug.includes("lachung") || newSlug.includes("lachen") || newSlug.includes("yumthang")) && currentDuration < 4) {
+        errors.push(`Replacing with ${newFound.name} requires a minimum trip duration of 4 days due to mountain transit and acclimatization.`);
+      }
     }
   }
 

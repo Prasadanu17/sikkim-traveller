@@ -22,7 +22,11 @@ export function generateBackendFallbackItinerary(tripContext, regenerationPrefer
   const travelers = tripContext?.travelers || { total: 2, type: "couple", adults: 2, children: 0, seniors: 0 };
   const travelStyle = tripContext?.travelStyle || "balanced";
   const budget = tripContext?.budget || { level: "comfortable", estimatedMin: 30000, estimatedMax: 50000 };
-  const rawDestinations = tripContext?.destinations || [];
+  const rawDestinations = Array.isArray(tripContext?.destinations)
+    ? tripContext.destinations
+    : Array.isArray(tripContext?.destinations?.selected)
+      ? tripContext.destinations.selected
+      : [];
 
   // Resolve selected destination objects
   const destinations = rawDestinations.map(d => {

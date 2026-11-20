@@ -722,6 +722,19 @@ export default function useTripPlanner() {
           selected: updated.destinations.selected.filter((s) => s !== destSlug)
         };
       }
+      if (changes.replaceDestination) {
+        const oldSlug = String(changes.replaceDestination.oldDestination || "").toLowerCase();
+        const newSlug = String(changes.replaceDestination.newDestination || "").toLowerCase();
+        if (oldSlug && newSlug) {
+          updated.destinations = {
+            ...updated.destinations,
+            selected: updated.destinations.selected.map((s) => (s === oldSlug ? newSlug : s))
+          };
+          if (!updated.destinations.selected.includes(newSlug)) {
+            updated.destinations.selected.push(newSlug);
+          }
+        }
+      }
 
       return updated;
     });

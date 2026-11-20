@@ -39,6 +39,69 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
   const duration = context?.duration || 5;
   const currentCost = context?.budget?.estimatedMax || 45000;
 
+  // 1b. ACCOMMODATION SPECIFIC LOOKUP
+  const isStayInquiry = lower.includes("where are we staying") ||
+    lower.includes("where will we stay") ||
+    lower.includes("where do we stay") ||
+    lower.includes("where am i staying") ||
+    lower.includes("what is our hotel") ||
+    lower.includes("which hotel") ||
+    lower.includes("what hotel") ||
+    lower.includes("which homestay") ||
+    lower.includes("stay tonight") ||
+    lower.includes("कहाँ रुकेंगे") ||
+    lower.includes("कहाँ बस्ने") ||
+    intentType === "ACCOMMODATION_LOOKUP";
+
+  if (isStayInquiry) {
+    const days = context?.itinerary?.days || [];
+    const hasItinerary = days.length > 0;
+    const requestedDay = intent?.entities?.dayNumber || 1;
+
+    if (!hasItinerary) {
+      return {
+        text: "You haven't generated an itinerary yet, so accommodations haven't been assigned. Please create or generate your itinerary first!",
+        sourceBadge: { name: "Itinerary Engine", confidence: "HIGH" },
+        language: lang
+      };
+    }
+
+    if (requestedDay < 1 || requestedDay > days.length) {
+      return {
+        text: `Your current trip has ${days.length} days. Please specify a valid day number between 1 and ${days.length}.`,
+        sourceBadge: { name: "Itinerary Engine", confidence: "HIGH" },
+        language: lang
+      };
+    }
+
+    const daySchedule = days[requestedDay - 1];
+    const stayObj = daySchedule?.stay;
+    const stayName = typeof stayObj === "string" ? stayObj : stayObj?.name;
+    const stayLoc = stayObj?.location || daySchedule?.baseLocation || daySchedule?.overnightLocation;
+
+    if (stayName) {
+      return {
+        text: `On Day ${requestedDay}, your stay is scheduled at ${stayName}${stayLoc ? ` in ${stayLoc}` : ""}.`,
+        dataCard: {
+          title: `Day ${requestedDay} Accommodation`,
+          details: [
+            `Property: ${stayName}`,
+            `Location: ${stayLoc || "Sikkim"}`,
+            `Type: ${stayObj?.type || "Hotel / Homestay"}`
+          ]
+        },
+        sourceBadge: { name: "Itinerary Stays Master", confidence: "HIGH" },
+        language: lang
+      };
+    }
+
+    return {
+      text: `For Day ${requestedDay}${stayLoc ? ` in ${stayLoc}` : ""}, specific accommodation has not been selected yet. You can choose a homestay, hotel, or resort in the Stay step!`,
+      sourceBadge: { name: "Itinerary Engine", confidence: "HIGH" },
+      language: lang
+    };
+  }
+
   if (intentType === 'REDUCE_BUDGET' || lower.includes('cheaper') || lower.includes('budget') || lower.includes('cost') || lower.includes('कम') || lower.includes('सस्ता') || lower.includes('घटाउनु')) {
     const savings = Math.round(currentCost * 0.2);
     return {
@@ -55,7 +118,7 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
         refinementInstruction: 'Make the trip cheaper by using shared transport and homestays.',
         actionLabel: t.budgetActionLabel
       },
-      sourceBadge: 'Deterministic Intelligence',
+      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'HIGH' },
       language: lang
     };
   }
@@ -76,7 +139,7 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
         refinementInstruction: `Make Day ${dayNum} more relaxed with dedicated rest time.`,
         actionLabel: t.dayActionLabel(dayNum)
       },
-      sourceBadge: 'Deterministic Intelligence',
+      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'HIGH' },
       language: lang
     };
   }
@@ -99,7 +162,7 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
         refinementInstruction: isShared ? 'Change transport mode to shared sumo.' : 'Reduce driving time by optimizing route.',
         actionLabel: isShared ? t.transportActionLabel : 'Apply Shorter Drives'
       },
-      sourceBadge: 'Deterministic Intelligence',
+      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'HIGH' },
       language: lang
     };
   }
@@ -120,7 +183,7 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
         refinementInstruction: `Change accommodation preference to ${stayType}.`,
         actionLabel: stayType === 'homestay' ? t.stayActionLabel : `Set Stays to ${stayType}`
       },
-      sourceBadge: 'Deterministic Intelligence',
+      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'HIGH' },
       language: lang
     };
   }
@@ -141,7 +204,50 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
         refinementInstruction: `Change trip duration to ${targetDur} days.`,
         actionLabel: t.durationActionLabel(targetDur)
       },
-      sourceBadge: 'Deterministic Intelligence',
+      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'HIGH' },
+      language: lang
+    };
+  }
+
+  if (intentType === 'REMOVE_ACTIVITY' || lower.includes('remove activity') || lower.includes('delete activity') || lower.includes('गतिविधि हटाएं') || lower.includes('क्रियाकलाप हटाउनुहोस्')) {
+    const dayNum = intent?.entities?.dayNumber || 2;
+    return {
+      text: t.removeActivity(dayNum),
+      actionCard: {
+        id: `prop_${Date.now()}_remove_activity`,
+        type: 'MUTATION_PROPOSAL',
+        category: 'ACTIVITY_REMOVAL',
+        title: t.removeActivityCardTitle(dayNum),
+        description: t.removeActivityCardDesc(dayNum),
+        proposedChanges: { targetDay: dayNum, removeActivity: true },
+        expectedImpact: `Lightens Day ${dayNum} schedule for relaxed exploration`,
+        estimatedSavings: null,
+        refinementInstruction: `Remove one non-essential activity from Day ${dayNum}.`,
+        actionLabel: t.removeActivityActionLabel(dayNum)
+      },
+      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'HIGH' },
+      language: lang
+    };
+  }
+
+  if (intentType === 'REPLACE_DESTINATION') {
+    const oldD = intent?.entities?.oldDestination || 'Pelling';
+    const newD = intent?.entities?.newDestination || 'Ravangla';
+    return {
+      text: t.replaceDest(oldD, newD),
+      actionCard: {
+        id: `prop_${Date.now()}_replace_dest`,
+        type: 'MUTATION_PROPOSAL',
+        category: 'DESTINATION_REPLACE',
+        title: t.replaceDestCardTitle(oldD, newD),
+        description: t.replaceDestCardDesc(oldD, newD),
+        proposedChanges: { replaceDestination: { oldDestination: oldD.toLowerCase(), newDestination: newD.toLowerCase() } },
+        expectedImpact: `Replaces ${oldD} with ${newD} and recalculates scenic mountain transit`,
+        estimatedSavings: null,
+        refinementInstruction: `Replace ${oldD} with ${newD} in the itinerary.`,
+        actionLabel: t.replaceDestActionLabel(oldD, newD)
+      },
+      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'HIGH' },
       language: lang
     };
   }
@@ -149,6 +255,29 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
   if (intentType === 'ADD_DESTINATION' || intentType === 'REMOVE_DESTINATION') {
     const isAdd = intentType === 'ADD_DESTINATION';
     const destName = intent?.entities?.destination || (lower.includes('pelling') || lower.includes('पेलिंग') ? 'Pelling' : 'Lachung');
+    
+    // North Sikkim feasibility check on duration
+    const isNorth = destName.toLowerCase().includes('lachung') || destName.toLowerCase().includes('lachen') || destName.toLowerCase().includes('yumthang');
+    if (isAdd && isNorth && duration < 4) {
+      return {
+        text: t.northSikkimDurationNotice(duration),
+        actionCard: {
+          id: `prop_${Date.now()}_duration_north`,
+          type: 'MUTATION_PROPOSAL',
+          category: 'DURATION',
+          title: t.durationCardTitle(5),
+          description: `Extending to 5 days allows a safe North Sikkim circuit without rushed high-altitude driving.`,
+          proposedChanges: { duration: 5, addDestination: destName.toLowerCase() },
+          expectedImpact: `Expands trip to 5 days and incorporates ${destName} with proper acclimatization`,
+          estimatedSavings: null,
+          refinementInstruction: `Extend trip to 5 days and add ${destName}.`,
+          actionLabel: t.durationActionLabel(5)
+        },
+        sourceBadge: { name: 'Deterministic Intelligence', confidence: 'HIGH' },
+        language: lang
+      };
+    }
+
     return {
       text: isAdd
         ? `I can add ${destName} into your route circuit.`
@@ -167,7 +296,48 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
         refinementInstruction: isAdd ? `Add ${destName} to the itinerary.` : `Remove ${destName} from the itinerary.`,
         actionLabel: isAdd ? `Add ${destName}` : `Remove ${destName}`
       },
-      sourceBadge: 'Deterministic Intelligence',
+      sourceBadge: { name: 'Deterministic Intelligence', confidence: 'HIGH' },
+      language: lang
+    };
+  }
+
+  if (intentType === 'PERMIT_INQUIRY' || lower.includes('permit') || lower.includes('परमिट') || lower.includes('अनुमति') || lower.includes('ilp') || lower.includes('pap')) {
+    return {
+      text: t.permits,
+      sourceBadge: { name: 'Sikkim Tourism & Civil Authorities', confidence: 'HIGH', url: 'https://www.sikkimtourism.gov.in' },
+      language: lang
+    };
+  }
+
+
+  if (intentType === 'PACKING_ADVICE' || lower.includes('pack') || lower.includes('clothes') || lower.includes('कपड़े')) {
+    return {
+      text: `For a ${duration}-day Sikkim trip, pack layered woolens, windproof jackets, thermal inners, sturdy walking shoes, sunscreen, sunglasses, and passport-size photos with valid ID proofs for permit checkpoints.`,
+      sourceBadge: { name: 'Himalayan Travel Advisory', confidence: 'HIGH' },
+      language: lang
+    };
+  }
+
+  if (intentType === 'ALTITUDE_ADVISORY' || lower.includes('ams') || lower.includes('oxygen') || lower.includes('ऊंचाई') || lower.includes('लेक लाग्ने') || (lower.includes('altitude') && !lower.includes('pack'))) {
+    return {
+      text: t.altitudeWarning,
+      sourceBadge: { name: 'Himalayan Health & Acclimatization Advisory', confidence: 'HIGH' },
+      language: lang
+    };
+  }
+
+  if (intentType === 'FOOD_CULTURE' || lower.includes('food') || lower.includes('momo') || lower.includes('thukpa') || lower.includes('खाना') || lower.includes('भोजन') || lower.includes('monaster') || lower.includes('गुम्बा')) {
+    return {
+      text: t.foodCulture,
+      sourceBadge: { name: 'Sikkim Cultural & Culinary Guide', confidence: 'HIGH' },
+      language: lang
+    };
+  }
+
+  if (intentType === 'ITINERARY_RECOMMENDATION' || lower.includes('recommend') || lower.includes('suggest a trip') || lower.includes('5 day') || lower.includes('५ दिने')) {
+    return {
+      text: t.recommend5Day,
+      sourceBadge: { name: 'Sikkim Route Specialist', confidence: 'HIGH' },
       language: lang
     };
   }
@@ -175,30 +345,25 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
   if (intentType === 'CURRENT_WEATHER' || lower.includes('weather') || lower.includes('rain') || lower.includes('मौसम')) {
     return {
       text: t.weather,
-      sourceBadge: 'Open-Meteo Normalizer',
+      sourceBadge: { name: 'Open-Meteo Weather Proxy', confidence: 'HIGH', url: 'https://open-meteo.com' },
       language: lang
     };
   }
 
-  if (lower.includes('permit') || lower.includes('परमिट')) {
-    return {
-      text: t.permits,
-      sourceBadge: 'Sikkim Permit Authority Guidance',
-      language: lang
-    };
-  }
 
-  if (intentType === 'PACKING_ADVICE' || lower.includes('pack') || lower.includes('clothes') || lower.includes('कपड़े')) {
+
+  if (intentType === 'EXPLAIN_ITINERARY' || lower.includes('explain my trip') || lower.includes('explain itinerary') || lower.includes('explain my itinerary')) {
+    const routeStr = (context?.itinerary?.route && context.itinerary.route.length > 0) ? context.itinerary.route.join(' → ') : 'Gangtok and scenic mountain passes';
     return {
-      text: `For a ${duration}-day Sikkim trip, pack layered woolens, windproof jackets, thermal inners, sturdy walking shoes, sunscreen, sunglasses, and passport-size photos with valid ID proofs for permit checkpoints.`,
-      sourceBadge: 'Himalayan Travel Advisory',
+      text: `Your ${duration}-day Sikkim itinerary covers ${routeStr}. It balances high-altitude mountain vistas with cultural stops at a comfortable pace.`,
+      sourceBadge: { name: 'Sikkim Traveller Copilot', confidence: 'HIGH' },
       language: lang
     };
   }
 
   return {
     text: t.generalFallback(duration),
-    sourceBadge: 'Sikkim Traveller Copilot',
+    sourceBadge: { name: 'Sikkim Traveller Copilot', confidence: 'HIGH' },
     language: lang
   };
 }

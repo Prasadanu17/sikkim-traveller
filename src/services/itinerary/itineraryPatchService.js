@@ -54,11 +54,20 @@ export function applyItineraryPatch(existingItinerary, patch) {
   }
 
   // ─── OPERATION 2: REMOVE INDIVIDUAL ACTIVITY ───
-  if (operation === "remove_activity" && targetDay && targetSection) {
+  if (operation === "remove_activity" && targetDay) {
     const dayObj = cloned.days.find((d) => d.dayNumber === targetDay);
-    if (dayObj && Array.isArray(dayObj[targetSection])) {
-      if (typeof targetActivityIndex === "number") {
-        dayObj[targetSection].splice(targetActivityIndex, 1);
+    if (dayObj) {
+      if (targetSection && Array.isArray(dayObj[targetSection])) {
+        if (typeof targetActivityIndex === "number") {
+          dayObj[targetSection].splice(targetActivityIndex, 1);
+        }
+      } else {
+        // Default remove last afternoon or morning activity
+        if (Array.isArray(dayObj.afternoon) && dayObj.afternoon.length > 0) {
+          dayObj.afternoon.pop();
+        } else if (Array.isArray(dayObj.morning) && dayObj.morning.length > 1) {
+          dayObj.morning.pop();
+        }
       }
       dayObj.notes = dayObj.notes || [];
       dayObj.notes.push("Activity removed by custom preference.");

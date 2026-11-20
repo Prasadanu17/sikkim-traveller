@@ -20,8 +20,13 @@ export async function refineTripItinerary(plannerState, existingItinerary, reque
   let updatedItinerary = null;
   let source = "fallback";
 
-  // Check if request is a fast localized patch (e.g. Day pace adjustment, transport mode, stay type)
-  if (intent.intent === "change_day_pace" && intent.targetDay) {
+  // Check if request is a fast localized patch (e.g. Day pace adjustment, activity removal, transport mode, stay type)
+  if (intent.intent === "remove_activity" && intent.targetDay) {
+    updatedItinerary = applyItineraryPatch(existingItinerary, {
+      operation: "remove_activity",
+      targetDay: intent.targetDay
+    });
+  } else if (intent.intent === "change_day_pace" && intent.targetDay) {
     updatedItinerary = applyItineraryPatch(existingItinerary, {
       operation: "update_day_pace",
       targetDay: intent.targetDay,

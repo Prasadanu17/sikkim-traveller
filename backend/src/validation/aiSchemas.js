@@ -266,6 +266,9 @@ export const requestInputSchema = z.union([
 
 export const refinementIntentSchema = z.object({
   intent: z.string().max(100),
+  confidence: z.number().optional(),
+  isMutating: z.boolean().optional(),
+  rawText: z.string().max(1000).optional(),
   targetDay: z.coerce.number().int().min(0).max(30).nullable().optional(),
   changes: refinementChangesSchema.optional(),
   entities: z.object({
@@ -273,7 +276,13 @@ export const refinementIntentSchema = z.object({
     pace: z.string().max(50).optional(),
     accommodationType: z.string().max(50).optional(),
     transportMode: z.string().max(50).optional(),
-    destinationSlug: z.string().max(100).optional()
+    destination: z.string().max(100).optional(),
+    destinationSlug: z.string().max(100).optional(),
+    dayNumber: z.coerce.number().int().optional(),
+    durationDiff: z.coerce.number().int().optional(),
+    targetDuration: z.coerce.number().int().optional(),
+    oldDestination: z.string().max(100).optional(),
+    newDestination: z.string().max(100).optional()
   }).optional()
 });
 
@@ -300,9 +309,86 @@ export const refineSchema = z.object({
   language: z.enum(['en', 'hi', 'ne']).optional()
 });
 
+export const copilotContextSchema = z.object({
+  duration: z.coerce.number().int().min(1).max(30).optional(),
+  trip: z.object({
+    duration: z.coerce.number().optional(),
+    travelStyle: z.string().max(100).optional(),
+    datesMode: z.string().max(50).optional(),
+    startDate: z.string().nullable().optional(),
+    endDate: z.string().nullable().optional()
+  }).optional(),
+  destinations: z.union([
+    destinationsFieldSchema,
+    z.array(z.union([
+      z.string().max(100),
+      z.object({
+        slug: z.string().max(100),
+        name: z.string().max(150).optional(),
+        district: z.string().max(100).optional()
+      })
+    ])).max(30)
+  ]).optional(),
+  interests: z.array(z.string().max(100)).max(30).optional(),
+  budget: budgetFieldSchema.optional(),
+  travelers: travelersFieldSchema.optional(),
+  travelStyle: z.string().max(100).optional(),
+  dates: travelTimingFieldSchema.optional(),
+  travelTiming: travelTimingFieldSchema.optional(),
+  accommodation: z.object({
+    mode: z.string().max(50).optional(),
+    types: z.array(z.string().max(50)).max(10).optional(),
+    comfort: z.string().max(50).optional()
+  }).optional(),
+  transportation: z.object({
+    mode: z.string().max(50).optional(),
+    preferredModes: z.array(z.string().max(50)).max(10).optional(),
+    longDriveTolerance: z.string().max(50).optional()
+  }).optional(),
+  itinerary: z.object({
+    tripTitle: z.string().max(250).optional(),
+    duration: z.coerce.number().optional(),
+    travelStyle: z.string().max(100).optional(),
+    daysCount: z.coerce.number().optional(),
+    route: z.array(z.string().max(100)).max(30).optional(),
+    estimatedCost: z.any().optional(),
+    days: z.array(z.object({
+      dayNumber: z.coerce.number(),
+      title: z.string().max(250).optional(),
+      baseLocation: z.string().max(100).optional(),
+      morning: z.array(z.string().max(250)).optional(),
+      afternoon: z.array(z.string().max(250)).optional(),
+      evening: z.array(z.string().max(250)).optional(),
+      transit: z.string().max(500).nullable().optional(),
+      stay: z.string().max(250).nullable().optional()
+    })).max(30).optional()
+  }).nullable().optional(),
+  realtime: z.object({
+    overallStatus: z.string().max(100).optional(),
+    riskLevel: z.string().max(50).optional(),
+    exposurePercentage: z.number().optional(),
+    affectedDays: z.array(z.number()).optional(),
+    alertsCount: z.number().optional()
+  }).nullable().optional(),
+  constraints: z.object({
+    budgetCap: z.coerce.number().nullable().optional(),
+    budgetTier: z.string().nullable().optional(),
+    avoidLongDrives: z.boolean().optional(),
+    keepNorthSikkim: z.boolean().optional(),
+    preferredTransport: z.string().nullable().optional(),
+    preferredStay: z.string().nullable().optional(),
+    pacePreference: z.string().nullable().optional(),
+    preferredDestinations: z.array(z.string().max(100)).max(20).optional(),
+    excludedDestinations: z.array(z.string().max(100)).max(20).optional(),
+    preferredLanguage: z.string().max(10).optional(),
+    appliedRefinements: z.array(z.any()).max(50).optional()
+  }).optional(),
+  language: z.enum(['en', 'hi', 'ne']).optional()
+});
+
 export const copilotSchema = z.object({
   message: z.string().min(1, 'Message cannot be empty').max(1500, 'Message too long'),
   intent: refinementIntentSchema.optional(),
-  context: tripContextSchema.optional(),
+  context: z.union([copilotContextSchema, tripContextSchema]).optional(),
   language: z.enum(['en', 'hi', 'ne']).optional()
 });
