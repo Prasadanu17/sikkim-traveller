@@ -362,5 +362,56 @@ export function parseCopilotIntent(userMessage) {
     return result;
   }
 
+  // 22. EMOTIONAL / ROMANTIC / COMPLIMENT ("i love you", "you are amazing", "marry me", "प्यार", "माया")
+  if (
+    text.includes("love you") ||
+    text.includes("i love u") ||
+    text.includes("love u") ||
+    text.includes("marry me") ||
+    text.includes("you are cute") ||
+    text.includes("you are sweet") ||
+    text.includes("you are best") ||
+    text.includes("you are awesome") ||
+    text.includes("you're amazing") ||
+    text.includes("you are amazing") ||
+    text.includes("प्यार") ||
+    text.includes("माया गर्छु") ||
+    text.includes("मन पर्छ")
+  ) {
+    result.intent = "LOVE_COMPLIMENT";
+    result.isMutating = false;
+    return result;
+  }
+
+  // 23. GREETINGS & CASUAL CHAT ("hello", "hi", "hey", "tashi delek", "नमस्ते")
+  if (
+    text === "hi" ||
+    text === "hello" ||
+    text === "hey" ||
+    text === "namaste" ||
+    text.includes("tashi delek") ||
+    text === "नमस्ते" ||
+    text === "नमस्कार" ||
+    text.startsWith("hello ") ||
+    text.startsWith("hi ") ||
+    text.startsWith("hey ")
+  ) {
+    result.intent = "GREETING";
+    result.isMutating = false;
+    return result;
+  }
+
+  // 24. GRATITUDE & APPRECIATION ("thank you", "thanks", "dhanyabad", "धन्यवाद")
+  if (
+    text.includes("thank") ||
+    text.includes("thx") ||
+    text.includes("धन्यवाद") ||
+    text.includes("धेरै धन्यवाद")
+  ) {
+    result.intent = "GRATITUDE";
+    result.isMutating = false;
+    return result;
+  }
+
   return result;
 }

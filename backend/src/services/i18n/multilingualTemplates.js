@@ -45,7 +45,12 @@ export const MULTILINGUAL_TEMPLATES = {
     foodCulture: 'Sikkimese cuisine offers rich Himalayan flavors: steamed beef/pork or vegetable momos, warm thukpa, fermented gundruk soup, kinema, and chhurpi soup. For cultural heritage, explore Rumtek and Pemayangtse monasteries.',
     recommend5Day: 'For a classic 5-day Sikkim circuit, I recommend: Day 1 Arrival & Gangtok MG Marg, Day 2 Tsomgo Lake & Baba Mandir, Day 3 Scenic drive to Pelling via Ravangla Buddha Park, Day 4 Pemayangtse Monastery & Skywalk, Day 5 Departure via Bagdogra/NJP.',
     northSikkimDurationNotice: (currentDur) => `Visiting North Sikkim (Lachung/Lachen/Yumthang) requires at least 4 full days due to the 6+ hour mountain road each way. With your current ${currentDur}-day plan, extending to 5 days is recommended for altitude safety.`,
-    generalFallback: (duration) => `I am your Sikkim Trip Copilot. I can help you optimize your ${duration}-day itinerary, answer road/weather questions, or suggest budget savings. How would you like to refine your trip?`
+    generalFallback: (duration) => `I am your Sikkim Trip Copilot. I can help you optimize your ${duration}-day itinerary, answer road/weather questions, or suggest budget savings. How would you like to refine your trip?`,
+    
+    // Warm conversational & high-conversion romance/charm responses
+    loveCompliment: (duration) => `Aww, that just made my Himalayan day! 🏔️✨ Wait until you see the golden sunrise over Mt. Kanchenjunga from Pelling or the misty pine valleys of Lachung—you're going to fall completely in love with Sikkim! Your ${duration}-day journey is tailored to be truly special. Would you like to review your stays or finalize your booking request?`,
+    friendlyGreeting: (duration) => `Tashi Delek! 🙏 Welcome to Sikkim Traveller! I'm here to craft your dream Himalayan holiday. From snow-clad passes to cozy boutique homestays and verified mountain 4WDs, we take care of everything. How can I help make your ${duration}-day adventure unforgettable?`,
+    appreciationResponse: (duration) => `You're so very welcome! 🏔️ Nothing gives us more joy than helping travellers experience the authentic beauty and culture of Sikkim. Everything in your ${duration}-day itinerary is ready for booking whenever you're set. Shall we proceed?`
   },
 
   hi: {
@@ -88,7 +93,10 @@ export const MULTILINGUAL_TEMPLATES = {
     foodCulture: 'सिक्किमी भोजन में मोमो, गरमा-गरम थुकपा, गुन्द्रुक सूप, किनेमा और छुरपी शामिल हैं। सांस्कृतिक दर्शन के लिए रुमटेक और पेमायांगत्से मठ अवश्य देखें।',
     recommend5Day: 'सिक्किम के लिए 5-दिवसीय आदर्श यात्रा कार्यक्रम: दिन 1 गंगटोक आगमन व एमजी मार्ग, दिन 2 त्सोमगो झील व बाबा मंदिर, दिन 3 पेलिंग यात्रा (रवांगला बुद्ध पार्क होते हुए), दिन 4 पेमायांगत्से मठ व स्काईवॉक, दिन 5 प्रस्थान।',
     northSikkimDurationNotice: (currentDur) => `उत्तरी सिक्किम (लाचुंग/लाचेन/युमथांग) जाने के लिए कम से कम 4 दिन आवश्यक हैं क्योंकि सड़क यात्रा में 6 घंटे लगते हैं। आपकी ${currentDur}-दिनों की योजना में 1 दिन जोड़ना सुरक्षित रहेगा।`,
-    generalFallback: (duration) => `मैं आपका सिक्किम ट्रिप कोपायलट हूँ। मैं आपकी ${duration}-दिनों की यात्रा को बेहतर बनाने, मौसम व सड़क की जानकारी देने और बजट बचाने में मदद कर सकता हूँ।`
+    generalFallback: (duration) => `मैं आपका सिक्किम ट्रिप कोपायलट हूँ। मैं आपकी ${duration}-दिनों की यात्रा को बेहतर बनाने, मौसम व सड़क की जानकारी देने और बजट बचाने में मदद कर सकता हूँ।`,
+    loveCompliment: (duration) => `बहुत-बहुत धन्यवाद! 🏔️✨ सिक्किम की खूबसूरत वादियां, कंचनजंघा का सुनहरा दृश्य और लाचुंग की शांत सुबहें आपका दिल जीत लेंगी। आपकी ${duration}-दिनों की यात्रा सचमुच यादगार होगी। क्या आप अपने होटल देखना चाहते हैं या सीधे बुकिंग शुरू करें?`,
+    friendlyGreeting: (duration) => `ताशी देलेक! 🙏 सिक्किम ट्रेवलर में आपका स्वागत है। हम आपके लिए सपनों जैसी हिमालयी यात्रा तैयार करते हैं—आरामदायक होमस्टे, सुरक्षित 4WD गाड़ियां और सभी परमिट। आइए आपकी ${duration}-दिनों की यात्रा शुरू करें!`,
+    appreciationResponse: (duration) => `आपका बहुत स्वागत है! 🏔️ सिक्किम की अद्भुत प्रकृति और संस्कृति का अनुभव कराना ही हमारा उद्देश्य है। आपकी ${duration}-दिनों की यात्रा योजना पूरी तरह तैयार है। क्या हम बुकिंग की ओर बढ़ें?`
   },
 
   ne: {
@@ -131,7 +139,10 @@ export const MULTILINGUAL_TEMPLATES = {
     foodCulture: 'सिक्किमी परिकारमा मोमो, थुक्पा, गुन्द्रुकको झोल, किनेमा र छुर्पी प्रसिद्ध छन्। ऐतिहासिक संस्कृतिका लागि रुम्तेक र पेमायाङत्से गुम्बा अवलोकन गर्नुहोस्।',
     recommend5Day: 'सिक्किमको उत्कृष्ट ५-दिने भ्रमण तालिका: दिन १ गान्तोक आगमन र एमजी मार्ग, दिन २ छोङ्गो ताल र बाबा मन्दिर, दिन ३ पेलिङ प्रस्थान (रवाङ्ला बुद्ध पार्क हुँदै), दिन ४ पेमायाङत्से गुम्बा र स्काइवाक, दिन ५ फिर्ती।',
     northSikkimDurationNotice: (currentDur) => `उत्तर सिक्किम (लाचुङ/लाचेन/युमथाङ) जान कम्तीमा ४ दिन चाहिन्छ किनकि सडक यात्रा ६ घण्टाभन्दा लामो हुन्छ। तपाईंको ${currentDur}-दिने तालिकामा १ दिन थप्नु उपयुक्त हुनेछ।`,
-    generalFallback: (duration) => `म तपाईंको सिक्किम भ्रमण कोपाइलट हुँ। म तपाईंको ${duration}-दिने यात्रालाई परिष्कृत गर्न, मौसम/सडक जानकारी दिन र बजेट घटाउन मद्दत गर्न सक्छु।`
+    generalFallback: (duration) => `म तपाईंको सिक्किम भ्रमण कोपाइलट हुँ। म तपाईंको ${duration}-दिने यात्रालाई परिष्कृत गर्न, मौसम/सडक जानकारी दिन र बजेट घटाउन मद्दत गर्न सक्छु।`,
+    loveCompliment: (duration) => `धेरै धेरै धन्यवाद! 🏔️✨ कञ्चनजङ्घाको सुनौलो बिहानी, लाचुङका सल्लाघारी र हिमाली तालहरू देखेर तपाईं पक्कै पनि मन्त्रमुग्ध हुनुहुनेछ। तपाईंको ${duration}-दिने यात्रा जीवनभरको लागि अविस्मरणीय हुनेछ। के हामी तपाईंको होटल हेर्ने वा यात्रा बुकिङ अघि बढाउने?`,
+    friendlyGreeting: (duration) => `टासी देलेक! 🙏 सिक्किम ट्राभलरमा हार्दिक स्वागत छ! हामी तपाईंको सहज र रोमाञ्चक हिमाली बिदाका लागि भरपर्दो गाडी, सुन्दर होमस्टे र परमिटको पूर्ण व्यवस्था गर्दछौं। तपाईंको ${duration}-दिने यात्रा कसरी सुरु गरौं?`,
+    appreciationResponse: (duration) => `तपाईंलाई धेरै स्वागत छ! 🏔️ सिक्किमको वास्तविक सौन्दर्य र संस्कृति पस्कन पाउनु हाम्रो लागि खुसीको कुरा हो। तपाईंको ${duration}-दिने योजना तयार छ, के हामी बुकिङ सुरु गरौं?`
   }
 };
 

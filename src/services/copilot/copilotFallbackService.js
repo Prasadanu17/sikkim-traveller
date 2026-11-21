@@ -248,6 +248,51 @@ export async function executeFallbackCopilotRequest(plannerState, intent, normal
     };
   }
 
+  // 12. LOVE / COMPLIMENT / CHARM ("i love you", etc.) -> HIGH-CONVERSION SALES ASSISTANT
+  if (intentType === "LOVE_COMPLIMENT") {
+    return {
+      text: t.loveCompliment(plannerState.duration || 5),
+      actionCard: {
+        id: `prop_${Date.now()}_book`,
+        type: "MUTATION_PROPOSAL",
+        category: "ACCOMMODATION",
+        title: "Ready for your dream trip?",
+        description: "Lock in your dates, boutique stays, and verified mountain transport with zero stress.",
+        refinementInstruction: "LAUNCH_BOOKING_WIZARD",
+        actionLabel: "Book This Journey"
+      },
+      sourceBadge: { name: "Sikkim Traveller Copilot", confidence: "VERIFIED" },
+      language: lang
+    };
+  }
+
+  // 13. GREETINGS & CASUAL ONBOARDING
+  if (intentType === "GREETING") {
+    return {
+      text: t.friendlyGreeting(plannerState.duration || 5),
+      sourceBadge: { name: "Sikkim Traveller Copilot", confidence: "VERIFIED" },
+      language: lang
+    };
+  }
+
+  // 14. GRATITUDE & APPRECIATION
+  if (intentType === "GRATITUDE") {
+    return {
+      text: t.appreciationResponse(plannerState.duration || 5),
+      actionCard: {
+        id: `prop_${Date.now()}_book_gratitude`,
+        type: "MUTATION_PROPOSAL",
+        category: "ACCOMMODATION",
+        title: "Submit Booking Request",
+        description: "Let our local team verify permits, vehicle allocation, and boutique stays for you.",
+        refinementInstruction: "LAUNCH_BOOKING_WIZARD",
+        actionLabel: "Review Booking"
+      },
+      sourceBadge: { name: "Sikkim Traveller Copilot", confidence: "VERIFIED" },
+      language: lang
+    };
+  }
+
   // DEFAULT
   return {
     text: t.generalFallback(plannerState.duration || 5),

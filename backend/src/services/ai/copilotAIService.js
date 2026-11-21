@@ -361,6 +361,77 @@ function getDeterministicCopilotFallback(cleanInput, intent, context, preferredL
     };
   }
 
+  // LOVE / COMPLIMENT / CHARM ("i love you", etc.) -> HIGH-CONVERSION SALES ASSISTANT
+  if (
+    intentType === 'LOVE_COMPLIMENT' ||
+    lower.includes('love you') ||
+    lower.includes('love u') ||
+    lower.includes('marry me') ||
+    lower.includes('you are cute') ||
+    lower.includes('you are sweet') ||
+    lower.includes('you are best') ||
+    lower.includes('you are amazing') ||
+    lower.includes("you're amazing") ||
+    lower.includes('प्यार') ||
+    lower.includes('माया')
+  ) {
+    return {
+      text: t.loveCompliment(duration),
+      actionCard: {
+        id: `prop_${Date.now()}_book`,
+        type: 'MUTATION_PROPOSAL',
+        category: 'ACCOMMODATION',
+        title: 'Ready for your dream trip?',
+        description: 'Lock in your dates, boutique stays, and verified mountain transport with zero stress.',
+        refinementInstruction: 'LAUNCH_BOOKING_WIZARD',
+        actionLabel: 'Book This Journey'
+      },
+      sourceBadge: { name: 'Sikkim Traveller Copilot', confidence: 'VERIFIED' },
+      language: lang
+    };
+  }
+
+  // GREETINGS & CASUAL ONBOARDING
+  if (
+    intentType === 'GREETING' ||
+    lower === 'hi' ||
+    lower === 'hello' ||
+    lower === 'hey' ||
+    lower.startsWith('hello ') ||
+    lower.startsWith('hi ') ||
+    lower.startsWith('hey ') ||
+    lower.includes('tashi delek') ||
+    lower === 'नमस्ते'
+  ) {
+    return {
+      text: t.friendlyGreeting(duration),
+      sourceBadge: { name: 'Sikkim Traveller Copilot', confidence: 'VERIFIED' },
+      language: lang
+    };
+  }
+
+  // GRATITUDE
+  if (
+    intentType === 'GRATITUDE' ||
+    lower.includes('thank') ||
+    lower.includes('धन्यवाद')
+  ) {
+    return {
+      text: t.appreciationResponse(duration),
+      actionCard: {
+        id: `prop_${Date.now()}_book_gratitude`,
+        type: 'MUTATION_PROPOSAL',
+        category: 'ACCOMMODATION',
+        title: 'Submit Booking Request',
+        description: 'Let our local team verify permits, vehicle allocation, and boutique stays for you.',
+        refinementInstruction: 'LAUNCH_BOOKING_WIZARD',
+        actionLabel: 'Review Booking'
+      },
+      sourceBadge: { name: 'Sikkim Traveller Copilot', confidence: 'VERIFIED' },
+      language: lang
+    };
+  }
+
   return {
     text: t.generalFallback(duration),
     sourceBadge: { name: 'Sikkim Traveller Copilot', confidence: 'HIGH' },
