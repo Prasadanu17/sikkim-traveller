@@ -16,15 +16,18 @@ export default function CopilotQuickActions({ plannerState, onSelectAction, disa
     // Helpful onboarding actions for first-time planning
     actions = [
       { id: "recommend", label: "🗺️ Suggest 5-Day Route", prompt: "Suggest a 5-day Sikkim route." },
-      { id: "north-best", label: "🏔️ North Sikkim Best Time", prompt: "Best time to visit North Sikkim." },
-      { id: "permits", label: "📄 Permit Requirements", prompt: "What are the permit requirements for Sikkim and foreign nationals?" },
-      { id: "planning-guide", label: "💡 Planning Advice", prompt: "What should I know before planning my trip?" },
-      { id: "altitude", label: "🩺 Altitude Sickness Tips", prompt: "What precautions should I take for high altitude sickness (AMS)?" }
+      { id: "snow", label: "❄️ Best Time for Snow", prompt: "I want to experience snowfall." },
+      { id: "peaceful", label: "🍃 Peaceful Getaways", prompt: "I want a peaceful vacation." },
+      { id: "family", label: "👨‍👩‍👧 Family Trip Advice", prompt: "Is Sikkim suitable for a family vacation?" },
+      { id: "cost", label: "💰 Estimated Trip Cost", prompt: "How much will a Sikkim trip cost?" },
+      { id: "romantic", label: "🌸 Romantic Getaways", prompt: "Can you plan a romantic trip?" },
+      { id: "permits", label: "📄 Permit Requirements", prompt: "What are the permit requirements for Sikkim and foreign nationals?" }
     ];
   } else {
     // Dynamic itinerary-specific actions based on actual itinerary days
     const targetDay = daysCount >= 2 ? 2 : 1;
     actions = [
+      { id: "book-now", label: "📋 Request Booking", prompt: "I want to book a trip." },
       { id: "cheaper", label: "💰 Reduce Cost", prompt: "Make my trip cheaper." },
       { id: "relaxed", label: `🌿 Relax Day ${targetDay}`, prompt: `Make Day ${targetDay} more relaxed.` },
       { id: "stays", label: `🏨 Day ${targetDay} Hotel Info`, prompt: `Where are we staying on Day ${targetDay}?` },

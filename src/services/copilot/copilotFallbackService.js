@@ -131,22 +131,28 @@ export async function executeFallbackCopilotRequest(plannerState, intent, normal
     };
   }
   
-  // 6. BOOK TRIP
+  // 6. BOOK TRIP (RESERVATION REQUEST)
   if (intentType === "BOOK_TRIP") {
-    if (!currentItinerary) {
+    if (!currentItinerary || !currentItinerary.days || currentItinerary.days.length === 0) {
       return {
-        text: "You need a generated AI itinerary before you can request a booking. Please configure your destinations and generate your itinerary first!"
+        text: t.bookingNoItinerary,
+        sourceBadge: { name: "Sikkim Traveller Copilot", confidence: "VERIFIED" },
+        language: lang
       };
     }
     return {
-      text: "Your trip is ready to send as a booking request. Please review the booking snapshot details and confirm to proceed.",
+      text: t.bookingReady,
       actionCard: {
+        id: `prop_${Date.now()}_book`,
         type: "MUTATION_PROPOSAL",
-        title: "Review Booking Request",
-        description: "Open the booking request wizard to review stay preferences, traveler names, and contact details.",
+        category: "ACCOMMODATION",
+        title: "Submit Reservation Request",
+        description: "Send your custom itinerary to our Gangtok team to verify boutique hotel rooms, private vehicle allocation, and permits.",
         refinementInstruction: "LAUNCH_BOOKING_WIZARD",
-        actionLabel: "Review Booking"
-      }
+        actionLabel: "Review & Request Booking"
+      },
+      sourceBadge: { name: "Sikkim Traveller Copilot", confidence: "VERIFIED" },
+      language: lang
     };
   }
 
@@ -248,25 +254,134 @@ export async function executeFallbackCopilotRequest(plannerState, intent, normal
     };
   }
 
-  // 12. LOVE / COMPLIMENT / CHARM ("i love you", etc.) -> HIGH-CONVERSION SALES ASSISTANT
-  if (intentType === "LOVE_COMPLIMENT") {
+  // 12a. TRAVEL ASPIRATION ("I wish I could visit Sikkim", "falling in love with this place", "experience these mountains")
+  if (intentType === "TRAVEL_ASPIRATION") {
     return {
-      text: t.loveCompliment(plannerState.duration || 5),
-      actionCard: {
-        id: `prop_${Date.now()}_book`,
-        type: "MUTATION_PROPOSAL",
-        category: "ACCOMMODATION",
-        title: "Ready for your dream trip?",
-        description: "Lock in your dates, boutique stays, and verified mountain transport with zero stress.",
-        refinementInstruction: "LAUNCH_BOOKING_WIZARD",
-        actionLabel: "Book This Journey"
+      text: t.travelAspiration(plannerState.duration || 5),
+      sourceBadge: { name: "Sikkim Route Specialist", confidence: "CURATED" },
+      language: lang
+    };
+  }
+
+  // 12b. TRAVEL INSPIRATION ("Sikkim looks beautiful", "never seen such beautiful mountains")
+  if (intentType === "TRAVEL_INSPIRATION") {
+    return {
+      text: t.travelInspiration,
+      sourceBadge: { name: "Sikkim Travel Advisory", confidence: "CURATED" },
+      language: lang
+    };
+  }
+
+  // 12c. SNOWFALL & WINTER INQUIRY
+  if (intentType === "SNOWFALL_INQUIRY") {
+    return {
+      text: t.snowfall,
+      sourceBadge: { name: "Himalayan Seasonal Advisory", confidence: "VERIFIED" },
+      language: lang
+    };
+  }
+
+  // 12c-1. BEST TIME TO VISIT / SEASON ADVICE
+  if (intentType === "BEST_TIME_TO_VISIT") {
+    return {
+      text: t.bestTimeToVisit,
+      sourceBadge: { name: "Sikkim Seasonal Guide", confidence: "CURATED" },
+      language: lang
+    };
+  }
+
+  // 12c-2. NORTH SIKKIM INQUIRY
+  if (intentType === "NORTH_SIKKIM_INQUIRY") {
+    return {
+      text: t.northSikkimInquiry,
+      sourceBadge: { name: "Sikkim Permit & Route Authority", confidence: "VERIFIED" },
+      language: lang
+    };
+  }
+
+  // 12d. PEACEFUL & LESS CROWDED RETREAT
+  if (intentType === "PEACEFUL_GETAWAY") {
+    return {
+      text: t.peacefulGetaway,
+      sourceBadge: { name: "Sikkim Heritage & Offbeat Specialist", confidence: "CURATED" },
+      language: lang
+    };
+  }
+
+  // 12e. FAMILY VACATION & SURPRISE
+  if (intentType === "FAMILY_TRIP") {
+    return {
+      text: t.familyTrip,
+      sourceBadge: { name: "Sikkim Family Travel Advisory", confidence: "CURATED" },
+      language: lang
+    };
+  }
+
+  // 12f. ROMANTIC TRIP / HONEYMOON
+  if (intentType === "ROMANTIC_TRIP") {
+    return {
+      text: t.romanticTrip,
+      sourceBadge: { name: "Sikkim Honeymoon & Boutique Stays", confidence: "CURATED" },
+      language: lang
+    };
+  }
+
+  // 12g-1. BUDGET INCLUSIONS
+  if (intentType === "BUDGET_INCLUSIONS") {
+    return {
+      text: t.budgetInclusions,
+      sourceBadge: { name: "Deterministic Budget Engine", confidence: "ESTIMATED" },
+      language: lang
+    };
+  }
+
+  // 12g. INFORMATIONAL BUDGET INQUIRY
+  if (intentType === "BUDGET_INQUIRY") {
+    return {
+      text: t.budgetInquiry,
+      dataCard: {
+        title: "Estimated Daily Cost Breakdown",
+        details: [
+          "Comfortable Homestay: ₹3,500 – ₹5,500 / person / day",
+          "Premium Resort Circuit: ₹7,500 – ₹12,000 / person / day",
+          "Inclusions: Private mountain 4WD, local driver, stays, meals & permits"
+        ]
       },
+      sourceBadge: { name: "Deterministic Budget Engine", confidence: "ESTIMATED" },
+      language: lang
+    };
+  }
+
+  // 12h. DESTINATION ADVICE
+  if (intentType === "DESTINATION_ADVICE") {
+    return {
+      text: t.destinationAdvice,
+      sourceBadge: { name: "Sikkim Route Specialist", confidence: "CURATED" },
+      language: lang
+    };
+  }
+
+  // 12i. START PLANNING
+  if (intentType === "START_PLANNING") {
+    return {
+      text: t.startPlanning,
       sourceBadge: { name: "Sikkim Traveller Copilot", confidence: "VERIFIED" },
       language: lang
     };
   }
 
-  // 13. GREETINGS & CASUAL ONBOARDING
+  // 13. EMOTIONAL / FRIENDLY COMPLIMENT ("i love you", "you are amazing", "you are so sweet")
+  // NOTE: Never attaches a booking wizard action card or pushes sales during friendly chat.
+  if (intentType === "LOVE_COMPLIMENT") {
+    const hasItinerary = Boolean(plannerState?.itinerary?.current?.days?.length > 0 || plannerState?.itinerary?.days?.length > 0);
+    return {
+      text: t.loveCompliment(plannerState.duration || 5, hasItinerary),
+      sourceBadge: { name: "Sikkim Traveller Copilot", confidence: "VERIFIED" },
+      language: lang
+    };
+  }
+
+  // 14. GREETINGS & CASUAL ONBOARDING
   if (intentType === "GREETING") {
     return {
       text: t.friendlyGreeting(plannerState.duration || 5),
@@ -275,19 +390,10 @@ export async function executeFallbackCopilotRequest(plannerState, intent, normal
     };
   }
 
-  // 14. GRATITUDE & APPRECIATION
+  // 15. GRATITUDE & APPRECIATION
   if (intentType === "GRATITUDE") {
     return {
       text: t.appreciationResponse(plannerState.duration || 5),
-      actionCard: {
-        id: `prop_${Date.now()}_book_gratitude`,
-        type: "MUTATION_PROPOSAL",
-        category: "ACCOMMODATION",
-        title: "Submit Booking Request",
-        description: "Let our local team verify permits, vehicle allocation, and boutique stays for you.",
-        refinementInstruction: "LAUNCH_BOOKING_WIZARD",
-        actionLabel: "Review Booking"
-      },
       sourceBadge: { name: "Sikkim Traveller Copilot", confidence: "VERIFIED" },
       language: lang
     };

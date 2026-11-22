@@ -150,6 +150,13 @@ export default function ItineraryResult({
                 </button>
               )}
               <button
+                onClick={handlePrint}
+                className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full border bg-white/10 hover:bg-gold hover:text-pine text-parchment border-white/20 transition cursor-pointer"
+                title="Print or Save PDF Itinerary"
+              >
+                <Printer size={11} /> Print / PDF
+              </button>
+              <button
                 onClick={handleDownloadCalendar}
                 className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full border transition cursor-pointer ${
                   calendarDownloaded
@@ -382,9 +389,9 @@ export default function ItineraryResult({
           </button>
           <button
             onClick={handlePrint}
-            className="inline-flex items-center gap-1.5 rounded-full bg-white border border-neutral-300 text-ink text-xs font-semibold px-4 py-2.5 hover:border-gold hover:text-gold-dark transition"
+            className="inline-flex items-center gap-1.5 rounded-full bg-white border border-neutral-300 text-ink text-xs font-semibold px-4 py-2.5 hover:border-gold hover:text-gold-dark transition shadow-sm"
           >
-            <Printer size={13} /> Print / Save
+            <Printer size={13} /> Print / Save PDF
           </button>
           <button
             onClick={handleDownloadCalendar}

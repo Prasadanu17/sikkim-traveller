@@ -52,7 +52,13 @@ const DESTINATION_ALIASES = {
  * Handles English, Hindi, and Nepali, spelling variants, and follow-ups.
  */
 export function parseCopilotIntent(userMessage) {
-  let text = (userMessage || "").toLowerCase().trim();
+  let text = (userMessage || "")
+    .toLowerCase()
+    .replace(/[!?;:]/g, " ")
+    .replace(/\.(?!\d)/g, " ")
+    .replace(/,(?!\d)/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 
   // Normalize spelling aliases
   for (const [alias, canonical] of Object.entries(DESTINATION_ALIASES)) {
@@ -208,16 +214,268 @@ export function parseCopilotIntent(userMessage) {
     return result;
   }
 
-  // 4. BUDGET OPTIMIZATION (Must evaluate before generic recommendations)
-  if (text.includes("reduce budget") || text.includes("reduce my budget") || text.includes("cheaper") || text.includes("reduce cost") || text.includes("lower budget") || text.includes("save money") || text.includes("less expensive") || text.includes("affordable") || text.includes("budget to") || (result.entities.budgetAmount && text.includes("budget")) || text.includes("कम") || text.includes("सस्ता") || text.includes("सस्तो") || text.includes("बजेट घटाउनु")) {
+  // 3a. BUDGET INCLUSIONS & BREAKDOWN
+  if (
+    text.includes("what is included in the estimated budget") ||
+    text.includes("what is included in the budget") ||
+    text.includes("what is included in the cost") ||
+    text.includes("what is included") ||
+    text.includes("what's included") ||
+    text.includes("what does the budget include") ||
+    text.includes("budget inclusions") ||
+    text.includes("trip inclusions") ||
+    text.includes("के के समावेश छ") ||
+    text.includes("बजट में क्या शामिल है")
+  ) {
+    result.intent = "BUDGET_INCLUSIONS";
+    result.isMutating = false;
+    return result;
+  }
+
+  // 3b. INFORMATIONAL BUDGET INQUIRY (Must evaluate before REDUCE_BUDGET)
+  if (
+    text.includes("how much will a sikkim trip cost") ||
+    text.includes("how much does a trip cost") ||
+    text.includes("how much does a sikkim trip cost") ||
+    text.includes("how much does it cost") ||
+    text.includes("how much will it cost") ||
+    text.includes("how much will this cost") ||
+    text.includes("how much might it cost") ||
+    text.includes("how much might a trip cost") ||
+    text.includes("what is the cost") ||
+    text.includes("trip cost") ||
+    text.includes("cost of sikkim trip") ||
+    text.includes("cost of a trip") ||
+    text.includes("estimated trip cost") ||
+    text.includes("खर्च कति लाग्छ") ||
+    text.includes("कितना खर्च आएगा") ||
+    text.includes("सिक्किम यात्रा का खर्च")
+  ) {
+    result.intent = "BUDGET_INQUIRY";
+    result.isMutating = false;
+    return result;
+  }
+
+  // 4. BUDGET OPTIMIZATION (Must evaluate after informational BUDGET_INQUIRY)
+  if (
+    text.includes("reduce budget") ||
+    text.includes("reduce my budget") ||
+    text.includes("limited budget") ||
+    text.includes("tight budget") ||
+    text.includes("reduce unnecessary travel costs") ||
+    text.includes("reduce travel costs") ||
+    text.includes("reduce costs") ||
+    text.includes("cheaper") ||
+    text.includes("reduce cost") ||
+    text.includes("lower budget") ||
+    text.includes("save money") ||
+    text.includes("less expensive") ||
+    text.includes("make it cheaper") ||
+    text.includes("affordable") ||
+    text.includes("budget to") ||
+    (result.entities.budgetAmount && text.includes("budget")) ||
+    text.includes("कम") ||
+    text.includes("सस्ता") ||
+    text.includes("सस्तो") ||
+    text.includes("बजेट घटाउनु")
+  ) {
     result.intent = "REDUCE_BUDGET";
     result.isMutating = true;
     return result;
   }
 
   // 5. ITINERARY RECOMMENDATION / SUGGEST TRIP (Evaluated before add/remove)
-  if (text.includes("recommend") || text.includes("suggest") || text.includes("itinerary for") || text.includes("trip plan") || text.includes("5 day") || text.includes("५ दिने") || text.includes("सुझाव") || text.includes("सिफारिस")) {
+  if (
+    text.includes("recommend") ||
+    text.includes("suggest") ||
+    text.includes("itinerary for") ||
+    text.includes("trip plan") ||
+    text.includes("5 day") ||
+    text.includes("5-day") ||
+    text.includes("५ दिने") ||
+    text.includes("सुझाव") ||
+    text.includes("सिफारिस")
+  ) {
     result.intent = "ITINERARY_RECOMMENDATION";
+    result.isMutating = false;
+    return result;
+  }
+
+  // 5b. DESTINATION ADVICE & OVERVIEW (Must evaluate before ADD_DESTINATION)
+  if (
+    text.includes("which places should i visit") ||
+    text.includes("which places to visit") ||
+    text.includes("what places should i visit") ||
+    text.includes("what places to visit") ||
+    text.includes("what places would be suitable") ||
+    text.includes("places would be suitable") ||
+    text.includes("suitable places") ||
+    text.includes("where should i go") ||
+    text.includes("top places to visit") ||
+    text.includes("best places in sikkim") ||
+    text.includes("places to see") ||
+    text.includes("कुन ठाउँ घुम्ने") ||
+    text.includes("कहाँ जाना चाहिए")
+  ) {
+    result.intent = "DESTINATION_ADVICE";
+    result.isMutating = false;
+    return result;
+  }
+
+  // 5c. ROMANTIC / HONEYMOON TRIP
+  if (
+    text.includes("romantic") ||
+    text.includes("romantic trip") ||
+    text.includes("honeymoon") ||
+    text.includes("couple trip") ||
+    text.includes("couples trip") ||
+    text.includes("रोमान्टिक") ||
+    text.includes("हनीमून")
+  ) {
+    result.intent = "ROMANTIC_TRIP";
+    result.isMutating = false;
+    return result;
+  }
+
+  // 5d. FAMILY VACATION & SURPRISE
+  if (
+    text.includes("surprise my family") ||
+    text.includes("family vacation") ||
+    text.includes("family trip") ||
+    text.includes("take my family") ||
+    text.includes("with my family") ||
+    text.includes("my family") ||
+    text.includes("suitable for a family") ||
+    text.includes("suitable for family") ||
+    text.includes("with kids") ||
+    text.includes("with parents") ||
+    text.includes("परिवार") ||
+    text.includes("बालबच्चा")
+  ) {
+    result.intent = "FAMILY_TRIP";
+    result.isMutating = false;
+    return result;
+  }
+
+  // 5e. SNOWFALL & WINTER INQUIRY
+  if (
+    text.includes("snowfall") ||
+    text.includes("experience snowfall") ||
+    text.includes("see snow") ||
+    text.includes("snow in sikkim") ||
+    text.includes("बर्फ") ||
+    text.includes("हिउँ")
+  ) {
+    result.intent = "SNOWFALL_INQUIRY";
+    result.isMutating = false;
+    return result;
+  }
+
+  // 5e-1. BEST TIME TO VISIT / SEASON
+  if (
+    text.includes("which month would be best") ||
+    text.includes("which month is best") ||
+    text.includes("best month to visit") ||
+    text.includes("best month") ||
+    text.includes("best time to visit") ||
+    text.includes("best season") ||
+    text.includes("when should i visit") ||
+    text.includes("कुन समय राम्रो") ||
+    text.includes("सिक्किम जाने का सबसे अच्छा समय")
+  ) {
+    result.intent = "BEST_TIME_TO_VISIT";
+    result.isMutating = false;
+    return result;
+  }
+
+  // 5e-2. NORTH SIKKIM INQUIRY
+  if (
+    !text.includes("permit") &&
+    !text.includes("परमिट") &&
+    !text.includes("ilp") &&
+    !text.includes("pap") &&
+    (
+      text.includes("can i visit north sikkim") ||
+      text.includes("visit north sikkim") ||
+      text.includes("how to visit north sikkim") ||
+      text.includes("north sikkim trip") ||
+      text.includes("north sikkim") ||
+      text.includes("उत्तर सिक्किम")
+    )
+  ) {
+    result.intent = "NORTH_SIKKIM_INQUIRY";
+    result.isMutating = false;
+    return result;
+  }
+
+  // 5f. PEACEFUL & LESS CROWDED GETAWAY
+  if (
+    text.includes("peaceful vacation") ||
+    text.includes("peaceful trip") ||
+    text.includes("peaceful") ||
+    text.includes("less crowded") ||
+    text.includes("somewhere less crowded") ||
+    text.includes("offbeat") ||
+    text.includes("quiet place") ||
+    text.includes("quiet vacation") ||
+    text.includes("peace and quiet") ||
+    text.includes("भीड़भाड़ से दूर") ||
+    text.includes("शान्त ठाउँ") ||
+    text.includes("शांत जगह")
+  ) {
+    result.intent = "PEACEFUL_GETAWAY";
+    result.isMutating = false;
+    return result;
+  }
+
+  // 5g. TRAVEL ASPIRATION (Wishing to visit, falling in love with Sikkim)
+  if (
+    text.includes("wish i could visit") ||
+    text.includes("wish to visit") ||
+    text.includes("falling in love with this place") ||
+    text.includes("falling in love with sikkim") ||
+    text.includes("fall in love with this place") ||
+    text.includes("want to experience these mountains") ||
+    text.includes("want to experience the mountains") ||
+    text.includes("experience these mountains") ||
+    text.includes("dream of visiting") ||
+    text.includes("सिक्किम घुम्ने रहर") ||
+    text.includes("सिक्किम जाने की इच्छा")
+  ) {
+    result.intent = "TRAVEL_ASPIRATION";
+    result.isMutating = false;
+    return result;
+  }
+
+  // 5h. TRAVEL INSPIRATION & ADMIRATION (Landscape beauty & wonder)
+  if (
+    text.includes("sikkim looks beautiful") ||
+    text.includes("looks beautiful") ||
+    text.includes("looks so beautiful") ||
+    text.includes("never seen such beautiful mountains") ||
+    text.includes("beautiful mountains") ||
+    text.includes("mountains are magnificent") ||
+    text.includes("sikkim is stunning") ||
+    text.includes("so breathtaking") ||
+    text.includes("सिक्किम कति सुन्दर") ||
+    text.includes("खूबसूरत पहाड़")
+  ) {
+    result.intent = "TRAVEL_INSPIRATION";
+    result.isMutating = false;
+    return result;
+  }
+
+  // 5i. START PLANNING VACATION
+  if (
+    text.includes("ready to plan my vacation") ||
+    text.includes("ready to plan") ||
+    text.includes("start planning") ||
+    text.includes("plan my vacation") ||
+    text.includes("let's plan") ||
+    text.includes("योजना बनाउन तयार") ||
+    text.includes("प्लान शुरू करें")
+  ) {
+    result.intent = "START_PLANNING";
     result.isMutating = false;
     return result;
   }
@@ -229,14 +487,20 @@ export function parseCopilotIntent(userMessage) {
     return result;
   }
 
-  // 7. DESTINATION MANAGEMENT (ADD / REMOVE)
-  if (text.includes("remove") || text.includes("delete") || text.includes("take out") || text.includes("don't want to visit") || text.includes("skip") || text.includes("हटाएं") || text.includes("हटाउनु")) {
+  // 7. DESTINATION MANAGEMENT (ADD / REMOVE) - Only triggers if destination entity is present
+  if (
+    (text.includes("remove ") || text.includes("delete ") || text.includes("drop ") || text.includes("skip ") || text.includes("हटाएं") || text.includes("हटाउनु")) &&
+    result.entities.destinationSlug
+  ) {
     result.intent = "REMOVE_DESTINATION";
     result.isMutating = true;
     return result;
   }
 
-  if (text.includes("add ") || text.includes("include ") || text.includes("visit ") || text.includes("want to visit") || text.includes("जोड़ें") || text.includes("थप्नुहोस्")) {
+  if (
+    (text.startsWith("add ") || text.startsWith("include ") || text.includes("please add ") || text.includes("also add ") || text.includes("जोड़ें") || text.includes("थप्नुहोस्")) &&
+    result.entities.destinationSlug
+  ) {
     result.intent = "ADD_DESTINATION";
     result.isMutating = true;
     return result;
@@ -348,8 +612,41 @@ export function parseCopilotIntent(userMessage) {
     return result;
   }
 
-  // 20. BOOK TRIP
-  if (text.includes("book this") || text.includes("book my") || text.includes("request this trip") || text.includes("book trip") || text.includes("बुक") || text.includes("बुकिङ")) {
+  // 20. BOOK TRIP / RESERVE JOURNEY
+  if (
+    text.includes("book this") ||
+    text.includes("book my") ||
+    text.includes("request this trip") ||
+    text.includes("book a trip") ||
+    text.includes("book trip") ||
+    text.includes("book now") ||
+    text.includes("want to book") ||
+    text.includes("can i reserve") ||
+    text.includes("reserve this itinerary") ||
+    text.includes("reserve my trip") ||
+    text.includes("reserve trip") ||
+    text.includes("can i submit my reservation request") ||
+    text.includes("submit my reservation request") ||
+    text.includes("submit reservation request") ||
+    text.includes("reservation request") ||
+    text.includes("how do i confirm it") ||
+    text.includes("confirm it") ||
+    text.includes("how do i confirm my booking") ||
+    text.includes("confirm my booking") ||
+    text.includes("confirm booking") ||
+    text.includes("how to book") ||
+    text.includes("request booking") ||
+    text.includes("order a trip") ||
+    text.includes("want to order") ||
+    text.includes("order now") ||
+    text.includes("order") ||
+    text.includes("बुकिंग करना है") ||
+    text.includes("बुक गर्नुहोस्") ||
+    text.includes("बुकिङ गर्न चाहन्छु") ||
+    text.includes("बुक") ||
+    text.includes("बुकिङ") ||
+    text.includes("अर्डर")
+  ) {
     result.intent = "BOOK_TRIP";
     result.isMutating = true;
     return result;
@@ -362,21 +659,25 @@ export function parseCopilotIntent(userMessage) {
     return result;
   }
 
-  // 22. EMOTIONAL / ROMANTIC / COMPLIMENT ("i love you", "you are amazing", "marry me", "प्यार", "माया")
+  // 22. EMOTIONAL / FRIENDLY COMPLIMENT ("i love you", "you are amazing", "you are so sweet", "marry me")
   if (
     text.includes("love you") ||
     text.includes("i love u") ||
     text.includes("love u") ||
+    text === "i love" ||
     text.includes("marry me") ||
     text.includes("you are cute") ||
     text.includes("you are sweet") ||
+    text.includes("so sweet") ||
     text.includes("you are best") ||
     text.includes("you are awesome") ||
     text.includes("you're amazing") ||
     text.includes("you are amazing") ||
+    text.includes("you are wonderful") ||
+    text.includes("you rock") ||
     text.includes("प्यार") ||
     text.includes("माया गर्छु") ||
-    text.includes("मन पर्छ")
+    text.includes("माया")
   ) {
     result.intent = "LOVE_COMPLIMENT";
     result.isMutating = false;

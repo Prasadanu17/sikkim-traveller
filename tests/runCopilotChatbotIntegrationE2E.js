@@ -282,7 +282,7 @@ async function runCopilotE2E() {
 
     const mobile375 = await browser.newContext({ viewport: { width: 375, height: 667 }, isMobile: true });
     const page375 = await mobile375.newPage();
-    await page375.goto('http://127.0.0.1:4173/plan-your-trip', { waitUntil: 'networkidle' });
+    await page375.goto('http://127.0.0.1:4173/plan-your-trip', { waitUntil: 'domcontentloaded' });
     const m375Launcher = page375.locator('button[aria-label="Open AI Trip Copilot"]');
     if (await m375Launcher.isVisible()) {
       await m375Launcher.click();
@@ -299,7 +299,7 @@ async function runCopilotE2E() {
 
     const mobile390 = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true });
     const page390 = await mobile390.newPage();
-    await page390.goto('http://127.0.0.1:4173/plan-your-trip', { waitUntil: 'networkidle' });
+    await page390.goto('http://127.0.0.1:4173/plan-your-trip', { waitUntil: 'domcontentloaded' });
     const m390Launcher = page390.locator('button[aria-label="Open AI Trip Copilot"]');
     if (await m390Launcher.isVisible()) {
       await m390Launcher.click();

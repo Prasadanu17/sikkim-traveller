@@ -116,12 +116,18 @@ export async function createJourney({ plannerState, travelerInfo = {}, preferenc
       }
     });
 
+    const parseSafeDate = (d) => {
+      if (!d) return null;
+      const parsed = new Date(d);
+      return isNaN(parsed.getTime()) ? null : parsed;
+    };
+
     // 4. Trip record
     const trip = await tx.trip.create({
       data: {
         journeyId: j.id,
-        startDate: startDate ? new Date(startDate) : null,
-        endDate: endDate ? new Date(endDate) : null,
+        startDate: parseSafeDate(startDate),
+        endDate: parseSafeDate(endDate),
         duration,
         dateMode: plannerState.dates?.mode || 'fixed',
         travelStyle: plannerState.travelStyle || 'balanced',

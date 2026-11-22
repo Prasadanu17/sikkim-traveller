@@ -183,16 +183,25 @@ export default function TripCopilot({ plannerState, onRefineItinerary }) {
 
           if (latestCard || summary.actionCard) {
             const cardToPrompt = latestCard || summary.actionCard;
-            setPendingConfirmation({
-              id: cardToPrompt.id,
-              instruction: cardToPrompt.refinementInstruction || query,
-              title: cardToPrompt.title,
-              description: cardToPrompt.description,
-              expectedImpact: cardToPrompt.expectedImpact,
-              estimatedSavings: cardToPrompt.estimatedSavings,
-              actionLabel: cardToPrompt.actionLabel,
-              proposedChanges: cardToPrompt.proposedChanges
-            });
+            // Only prompt modal confirmation if this is an actual itinerary mutation with proposedChanges
+            // and NOT an inline booking wizard launcher or informative card.
+            if (
+              cardToPrompt.type === "MUTATION_PROPOSAL" &&
+              cardToPrompt.proposedChanges &&
+              Object.keys(cardToPrompt.proposedChanges).length > 0 &&
+              cardToPrompt.refinementInstruction !== "LAUNCH_BOOKING_WIZARD"
+            ) {
+              setPendingConfirmation({
+                id: cardToPrompt.id,
+                instruction: cardToPrompt.refinementInstruction || query,
+                title: cardToPrompt.title,
+                description: cardToPrompt.description,
+                expectedImpact: cardToPrompt.expectedImpact,
+                estimatedSavings: cardToPrompt.estimatedSavings,
+                actionLabel: cardToPrompt.actionLabel,
+                proposedChanges: cardToPrompt.proposedChanges
+              });
+            }
           }
         },
         onError: (err) => {
@@ -371,8 +380,17 @@ export default function TripCopilot({ plannerState, onRefineItinerary }) {
                     <h3 className="font-display font-bold text-sm text-parchment leading-tight">
                       Sikkim Trip Copilot
                     </h3>
-                    <span className="text-[10px] text-gold/80 block">
-                      Connected to your {plannerState?.duration || 5}-Day Itinerary
+                    <span className="text-[10px] text-gold/90 flex items-center gap-1.5">
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full ${
+                          Boolean(plannerState?.itinerary?.current && plannerState?.itinerary?.current?.days?.length > 0)
+                            ? "bg-emerald-400 animate-pulse"
+                            : "bg-amber-400"
+                        }`}
+                      />
+                      {Boolean(plannerState?.itinerary?.current && plannerState?.itinerary?.current?.days?.length > 0)
+                        ? `Connected to your ${plannerState?.itinerary?.current?.days?.length || plannerState?.duration || 5}-Day Itinerary`
+                        : "AI Mountain Concierge • Ready to Plan"}
                     </span>
                   </div>
                 </div>
